@@ -31,7 +31,6 @@ import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 import java.awt.image.SampleModel;
 import java.awt.image.WritableRaster;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.List;
@@ -116,6 +115,19 @@ public class ImageConversion {
         }
         return toBufferedImage(matrix.toMat());
     }
+    
+    public static void releaseMat(Mat mat) {
+        if (mat != null) {
+            mat.release();
+        }
+    }
+    
+    public static void releasePlanarImage(PlanarImage img) {
+        if (img != null) {
+            img.release();
+        }
+    }
+
 
     public static int convertToDataType(int cvType) {
         switch (CvType.depth(cvType)) {
@@ -144,7 +156,7 @@ public class ImageConversion {
     public static ImageCV toMat(RenderedImage img, Rectangle region) {
         return toMat(img, region, true);
     }
-    
+
     public static ImageCV toMat(RenderedImage img, Rectangle region, boolean toBGR) {
         Raster raster = region == null ? img.getData() : img.getData(region);
         DataBuffer buf = raster.getDataBuffer();
@@ -160,24 +172,23 @@ public class ImageConversion {
         }
 
         if (isBinary(raster.getSampleModel())) {
-            ImageCV mat = new ImageCV(raster.getHeight(), raster.getWidth(), CvType.CV_8UC1);
+            // Sonar false positive: not mandatory to close ImageCV (can be done with finalize())
+            ImageCV mat = new ImageCV(raster.getHeight(), raster.getWidth(), CvType.CV_8UC1);  //NOSONAR
             mat.put(0, 0, getUnpackedBinaryData(raster, raster.getBounds()));
             return mat;
         }
 
         if (buf instanceof DataBufferByte) {
             if (Arrays.equals(offsets, new int[] { 0, 0, 0 })) {
-                List<Mat> mv = new ArrayList<>();
+
                 Mat b = new Mat(raster.getHeight(), raster.getWidth(), CvType.CV_8UC1);
                 b.put(0, 0, ((DataBufferByte) buf).getData(2));
-                mv.add(b);
                 Mat g = new Mat(raster.getHeight(), raster.getWidth(), CvType.CV_8UC1);
-                b.put(0, 0, ((DataBufferByte) buf).getData(1));
-                mv.add(g);
-                Mat r = new Mat(raster.getHeight(), raster.getWidth(), CvType.CV_8UC1);
-                b.put(0, 0, ((DataBufferByte) buf).getData(0));
-                mv.add(r);
-                ImageCV dstImg = new ImageCV();
+                g.put(0, 0, ((DataBufferByte) buf).getData(1));
+                ImageCV r = new ImageCV(raster.getHeight(), raster.getWidth(), CvType.CV_8UC1);
+                r.put(0, 0, ((DataBufferByte) buf).getData(0));
+                List<Mat> mv = toBGR ? Arrays.asList(b, g, r) : Arrays.asList(r, g, b);
+                ImageCV dstImg = new ImageCV(raster.getHeight(), raster.getWidth(), CvType.CV_8UC3);
                 Core.merge(mv, dstImg);
                 return dstImg;
             }
@@ -188,8 +199,7 @@ public class ImageConversion {
                 ImageCV dstImg = new ImageCV();
                 Imgproc.cvtColor(mat, dstImg, Imgproc.COLOR_RGB2BGR);
                 return dstImg;
-            }
-            else if(!toBGR && Arrays.equals(offsets, new int[] { 2, 1, 0 })) {
+            } else if (!toBGR && Arrays.equals(offsets, new int[] { 2, 1, 0 })) {
                 ImageCV dstImg = new ImageCV();
                 Imgproc.cvtColor(mat, dstImg, Imgproc.COLOR_BGR2RGB);
                 return dstImg;

@@ -91,7 +91,8 @@ public class RawImageIO implements DcmMediaReader {
         DicomOutputStream out = null;
         try {
             File file = imageCV.getFile();
-            BulkData bdl = new BulkData(file.toURI().toString(), FileRawImage.HEADER_LENGTH, (int) file.length(), false);
+            BulkData bdl = new BulkData(file.toURI().toString(), FileRawImage.HEADER_LENGTH,
+                (int) file.length() - FileRawImage.HEADER_LENGTH, false);
             dcm.setValue(Tag.PixelData, VR.OW, bdl);
             File tmpFile = new File(DicomMediaIO.DICOM_EXPORT_DIR, dcm.getString(Tag.SOPInstanceUID));
             out = new DicomOutputStream(tmpFile);
@@ -188,7 +189,7 @@ public class RawImageIO implements DcmMediaReader {
 
     @Override
     public String[] getReaderDescription() {
-        return new String[] { "Raw Image Decoder" }; //$NON-NLS-1$
+        return new String[] { "File Raw Image Decoder from OpenCV" }; //$NON-NLS-1$
     }
 
     @Override
@@ -231,6 +232,7 @@ public class RawImageIO implements DcmMediaReader {
 
     @Override
     public void replaceURI(URI uri) {
+        throw new UnsupportedOperationException();
     }
 
     public static ImageReader initRawImageReader(ImageInputStream imageStream, ImageParameters h, int frames,
@@ -239,7 +241,7 @@ public class RawImageIO implements DcmMediaReader {
 
             long[] frameOffsets = new long[frames];
             int frameLen = h.getWidth() * h.getHeight() * h.getSamplesPerPixel() * (h.getBitsPerSample() >> 3);
-            
+
             frameOffsets[0] = pixelDataPos;
             for (int i = 1; i < frameOffsets.length; i++) {
                 frameOffsets[i] = frameOffsets[i - 1] + frameLen;

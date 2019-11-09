@@ -22,7 +22,7 @@ import org.weasis.core.api.explorer.ObservableEvent;
 import org.weasis.core.api.explorer.model.DataExplorerModel;
 import org.weasis.core.api.gui.util.Filter;
 import org.weasis.core.api.gui.util.MathUtil;
-import org.weasis.core.api.image.CvUtil;
+import org.weasis.core.api.image.cv.CvUtil;
 import org.weasis.core.api.media.data.Series;
 import org.weasis.core.api.media.data.SeriesEvent;
 import org.weasis.core.api.media.data.TagView;
@@ -37,7 +37,7 @@ public class DicomSeries extends Series<DicomImageElement> {
     static final TagView defaultTagView =
         new TagView(TagD.getTagFromIDs(Tag.SeriesDescription, Tag.SeriesNumber, Tag.SeriesTime));
 
-    private static volatile PreloadingTask preloadingTask;
+    private static PreloadingTask preloadingTask;
 
     public DicomSeries(String subseriesInstanceUID) {
         this(subseriesInstanceUID, null, defaultTagView);
@@ -99,7 +99,7 @@ public class DicomSeries extends Series<DicomImageElement> {
         if (getFileSize() > 0.0) {
             toolTips.append(Messages.getString("DicomSeries.size")); //$NON-NLS-1$
             toolTips.append(StringUtil.COLON_AND_SPACE);
-            toolTips.append(FileUtil.formatSize(getFileSize()));
+            toolTips.append(FileUtil.humanReadableByte(getFileSize(), false));
             toolTips.append("<br>"); //$NON-NLS-1$
         }
         toolTips.append("</html>"); //$NON-NLS-1$
@@ -288,7 +288,6 @@ public class DicomSeries extends Series<DicomImageElement> {
                 if (model == null || index < 0 || index >= size) {
                     return;
                 }
-                // TODO need to be changed with openCV
                 long imgSize = evaluateImageSize(imageList.get(index)) * size + 5000;
                 long heapSize = Runtime.getRuntime().totalMemory();
                 long heapFreeSize = Runtime.getRuntime().freeMemory();

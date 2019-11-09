@@ -99,6 +99,10 @@ public class PresetWindowLevel {
         return shape;
     }
 
+    public boolean isAutoLevel() {
+        return keyCode == KeyEvent.VK_0;
+    }
+
     @Override
     public String toString() {
         return name;
@@ -226,8 +230,8 @@ public class PresetWindowLevel {
         autoLevel.setKeyCode(KeyEvent.VK_0);
         presetList.add(autoLevel);
 
-        // Exclude Secondary Capture CT
-        if (image.getBitsStored() > 8) {
+        // Exclude Secondary Capture CT and when PR preset
+        if (image.getBitsStored() > 8 && !"[PR]".equals(type)) { //$NON-NLS-1$
             List<PresetWindowLevel> modPresets = presetListByModality.get(TagD.getTagValue(image, Tag.Modality));
             if (modPresets != null) {
                 presetList.addAll(modPresets);
@@ -285,9 +289,12 @@ public class PresetWindowLevel {
             if (!file.canRead()) {
                 return Collections.emptyMap();
             }
-            XMLInputFactory xmlif = XMLInputFactory.newInstance();
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            // disable external entities for security
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE);
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, Boolean.FALSE);
             stream = new FileInputStream(file); // $NON-NLS-1$
-            xmler = xmlif.createXMLStreamReader(stream);
+            xmler = factory.createXMLStreamReader(stream);
 
             int eventType;
             while (xmler.hasNext()) {

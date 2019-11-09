@@ -20,9 +20,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import javax.swing.BoundedRangeModel;
@@ -79,7 +81,6 @@ import org.weasis.core.api.service.BundleTools;
 import org.weasis.core.api.service.WProperties;
 import org.weasis.core.api.util.LangUtil;
 import org.weasis.core.api.util.ResourceUtil;
-import org.weasis.core.ui.docking.DockableTool;
 import org.weasis.core.ui.editor.SeriesViewerEvent;
 import org.weasis.core.ui.editor.SeriesViewerEvent.EVENT;
 import org.weasis.core.ui.editor.image.DefaultView2d;
@@ -97,7 +98,6 @@ import org.weasis.core.ui.editor.image.ViewCanvas;
 import org.weasis.core.ui.editor.image.ViewerToolBar;
 import org.weasis.core.ui.editor.image.ZoomToolBar;
 import org.weasis.core.ui.model.graphic.Graphic;
-import org.weasis.core.ui.model.graphic.GraphicSelectionListener;
 import org.weasis.core.ui.model.layer.LayerType;
 import org.weasis.core.ui.model.utils.bean.PanPoint;
 import org.weasis.core.ui.util.ColorLayerUI;
@@ -124,8 +124,8 @@ import org.weasis.opencv.op.ImageConversion;
 public class EventManager extends ImageViewerEventManager<DicomImageElement> implements ActionListener {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventManager.class);
 
-    public static final String[] functions =
-        { "zoom", "wl", "move", "scroll", "layout", "mouseLeftAction", "synch", "reset" }; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$ //$NON-NLS-8$
+    public static final List<String> functions = Collections
+        .unmodifiableList(Arrays.asList("zoom", "wl", "move", "scroll", "layout", "mouseLeftAction", "synch", "reset")); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$ //$NON-NLS-8$
 
     /** The single instance of this singleton class. */
     private static EventManager instance;
@@ -402,7 +402,7 @@ public class EventManager extends ImageViewerEventManager<DicomImageElement> imp
 
             class CineThread extends Thread {
 
-                private volatile int iteration;
+                private AtomicInteger iteration;
                 private volatile int waitTimeMillis;
                 private volatile int currentCineRate;
                 private volatile long start;
@@ -414,14 +414,10 @@ public class EventManager extends ImageViewerEventManager<DicomImageElement> imp
                     while (cining) {
                         long startFrameTime = System.currentTimeMillis();
                         // Set the value to SliderCineListener, must be in EDT for refreshing UI correctly
-                        GuiExecutor.instance().invokeAndWait(new Runnable() {
-
-                            @Override
-                            public void run() {
-                                if (cining) {
-                                    int frameIndex = getSliderValue() + 1;
-                                    setSliderValue(frameIndex > getSliderMax() ? 0 : frameIndex);
-                                }
+                        GuiExecutor.instance().invokeAndWait(() -> {
+                            if (cining) {
+                                int frameIndex = getSliderValue() + 1;
+                                setSliderValue(frameIndex > getSliderMax() ? 0 : frameIndex);
                             }
                         });
                         // Time to set the new frame index
@@ -437,13 +433,12 @@ public class EventManager extends ImageViewerEventManager<DicomImageElement> imp
                             }
                         }
 
-                        iteration++;
                         // Check the speed every 3 images
-                        if (iteration > 2) {
+                        if (iteration.incrementAndGet() > 2) {
                             // Get the speed rate (fps) on the last 3 images
-                            currentCineRate = (int) (iteration * 1000 / (System.currentTimeMillis() - start));
+                            currentCineRate = (int) (iteration.get() * 1000 / (System.currentTimeMillis() - start));
                             // reinitialize the parameters for computing speed next time
-                            iteration = 0;
+                            iteration.set(0);
                             waitTimeMillis = 1000 / getSpeed();
                             start = System.currentTimeMillis();
                         }
@@ -451,7 +446,7 @@ public class EventManager extends ImageViewerEventManager<DicomImageElement> imp
                 }
 
                 public void iniSpeed() {
-                    iteration = 0;
+                    iteration = new AtomicInteger(0);
                     currentCineRate = getSpeed();
                     waitTimeMillis = 1000 / currentCineRate;
                     start = System.currentTimeMillis();
@@ -562,6 +557,11 @@ public class EventManager extends ImageViewerEventManager<DicomImageElement> imp
                 defaultPresetAction.get().isSelected());
             evt.put(command, object);
             firePropertyChange(ActionW.SYNCH.cmd(), null, evt);
+        }
+
+        if (selectedView2dContainer != null) {
+            fireSeriesViewerListeners(
+                new SeriesViewerEvent(selectedView2dContainer, null, null, EVENT.WIN_LEVEL));
         }
     }
 
@@ -686,10 +686,10 @@ public class EventManager extends ImageViewerEventManager<DicomImageElement> imp
 
     private ComboItemListener<ByteLut> newLutAction() {
         List<ByteLut> luts = new ArrayList<>();
-        luts.add(ByteLut.grayLUT);
+        luts.add(ByteLutCollection.Lut.GRAY.getByteLut());
         ByteLutCollection.readLutFilesFromResourcesDir(luts, ResourceUtil.getResource("luts"));//$NON-NLS-1$
         // Set default first as the list has been sorted
-        luts.add(0, ByteLut.defaultLUT);
+        luts.add(0, ByteLutCollection.Lut.IMAGE.getByteLut());
 
         return new ComboItemListener<ByteLut>(ActionW.LUT, luts.toArray(new ByteLut[luts.size()])) {
 
@@ -697,6 +697,10 @@ public class EventManager extends ImageViewerEventManager<DicomImageElement> imp
             public void itemStateChanged(Object object) {
                 firePropertyChange(ActionW.SYNCH.cmd(), null,
                     new SynchEvent(getSelectedViewPane(), action.cmd(), object));
+                if (selectedView2dContainer != null) {
+                    fireSeriesViewerListeners(
+                        new SeriesViewerEvent(selectedView2dContainer, null, null, EVENT.LUT));
+                }
             }
         };
     }
@@ -721,7 +725,7 @@ public class EventManager extends ImageViewerEventManager<DicomImageElement> imp
             return action;
         }
         // Only return the action if it is enabled
-        if (Optional.ofNullable(getAction(action.get())).filter(a -> a.isActionEnabled()).isPresent()) {
+        if (Optional.ofNullable(getAction(action.get())).filter(ActionState::isActionEnabled).isPresent()) {
             return action;
         } else if (ActionW.KO_TOOGLE_STATE.equals(action.get()) && keyEvent == ActionW.KO_TOOGLE_STATE.getKeyCode()) {
             Optional<ToggleButtonListener> koToggleAction =
@@ -791,7 +795,7 @@ public class EventManager extends ImageViewerEventManager<DicomImageElement> imp
     public void setSelectedView2dContainer(ImageViewerPlugin<DicomImageElement> selectedView2dContainer) {
         if (this.selectedView2dContainer != null) {
             this.selectedView2dContainer.setMouseActions(null);
-            getAction(ActionW.SCROLL_SERIES, SliderCineListener.class).ifPresent(a -> a.stop());
+            getAction(ActionW.SCROLL_SERIES, SliderCineListener.class).ifPresent(SliderCineListener::stop);
         }
 
         ImageViewerPlugin<DicomImageElement> oldContainer = this.selectedView2dContainer;
@@ -837,9 +841,9 @@ public class EventManager extends ImageViewerEventManager<DicomImageElement> imp
     private void cinePlay(String command) {
         if (command != null) {
             if (command.equals(ActionW.CINESTART.cmd())) {
-                getAction(ActionW.SCROLL_SERIES, SliderCineListener.class).ifPresent(a -> a.start());
+                getAction(ActionW.SCROLL_SERIES, SliderCineListener.class).ifPresent(SliderCineListener::start);
             } else if (command.equals(ActionW.CINESTOP.cmd())) {
-                getAction(ActionW.SCROLL_SERIES, SliderCineListener.class).ifPresent(a -> a.stop());
+                getAction(ActionW.SCROLL_SERIES, SliderCineListener.class).ifPresent(SliderCineListener::stop);
             }
         }
     }
@@ -951,14 +955,7 @@ public class EventManager extends ImageViewerEventManager<DicomImageElement> imp
         updateAllListeners(selectedView2dContainer,
             synchAtction == null ? SynchView.NONE : (SynchView) synchAtction.getSelectedItem());
 
-        List<DockableTool> tools = selectedView2dContainer.getToolPanel();
-        synchronized (tools) {
-            for (DockableTool p : tools) {
-                if (p instanceof GraphicSelectionListener) {
-                    view2d.getGraphicManager().addGraphicSelectionListener((GraphicSelectionListener) p);
-                }
-            }
-        }
+        view2d.updateGraphicSelectionListener(selectedView2dContainer);
         return true;
     }
 
@@ -1314,7 +1311,7 @@ public class EventManager extends ImageViewerEventManager<DicomImageElement> imp
                 for (final ResetTools action : ResetTools.values()) {
                     final JMenuItem item = new JMenuItem(action.toString());
                     if (ResetTools.ALL.equals(action)) {
-                        item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE,  0));
+                        item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0));
                     }
                     item.addActionListener(e -> reset(action));
                     menu.add(item);
@@ -1656,7 +1653,7 @@ public class EventManager extends ImageViewerEventManager<DicomImageElement> imp
                     if (command.startsWith("session")) { //$NON-NLS-1$
                         AuditLog.LOGGER.info("source:telnet {}", command); //$NON-NLS-1$
                     } else {
-                        AuditLog.LOGGER.info("source:telnet mouse:{} action:{}", MouseActions.LEFT, command); //$NON-NLS-1$
+                        AuditLog.LOGGER.info("source:telnet mouse:{} action:{}", MouseActions.T_LEFT, command); //$NON-NLS-1$
                         excecuteMouseAction(command);
                     }
                 } catch (Exception e) {
@@ -1667,8 +1664,8 @@ public class EventManager extends ImageViewerEventManager<DicomImageElement> imp
     }
 
     private void excecuteMouseAction(String command) {
-        if (!command.equals(mouseActions.getAction(MouseActions.LEFT))) {
-            mouseActions.setAction(MouseActions.LEFT, command);
+        if (!command.equals(mouseActions.getAction(MouseActions.T_LEFT))) {
+            mouseActions.setAction(MouseActions.T_LEFT, command);
             ImageViewerPlugin<DicomImageElement> view = getSelectedView2dContainer();
             if (view != null) {
                 view.setMouseActions(mouseActions);
@@ -1679,7 +1676,7 @@ public class EventManager extends ImageViewerEventManager<DicomImageElement> imp
                     if (action == null) {
                         command = ActionW.NO_ACTION.cmd();
                     }
-                    toolBar.changeButtonState(MouseActions.LEFT, command);
+                    toolBar.changeButtonState(MouseActions.T_LEFT, command);
                 }
             }
         }
@@ -1688,7 +1685,7 @@ public class EventManager extends ImageViewerEventManager<DicomImageElement> imp
     public void synch(String[] argv) throws IOException {
         final String[] usage = { "Set a synchronization mode", //$NON-NLS-1$
             "Usage: dcmview2d:synch VALUE", //$NON-NLS-1$
-            "VALUE is " + View2dContainer.DEFAULT_SYNCH_LIST.stream().map(s -> s.getCommand()) //$NON-NLS-1$
+            "VALUE is " + View2dContainer.DEFAULT_SYNCH_LIST.stream().map(SynchView::getCommand) //$NON-NLS-1$
                 .collect(Collectors.joining("|", "(", ")")), //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
             "  -? --help       show help" }; //$NON-NLS-1$
         final Option opt = Options.compile(usage).parse(argv);

@@ -402,21 +402,6 @@ public class View2d extends DefaultView2d<DicomImageElement> {
         }
     }
 
-    @Override
-    public void reset() {
-        super.reset();
-        DicomImageElement img = getImage();
-        if (img != null) {
-            Object key = img.getKey();
-            List<PRSpecialElement> prList =
-                DicomModel.getPrSpecialElements(series, TagD.getTagValue(img, Tag.SOPInstanceUID, String.class),
-                    key instanceof Integer ? (Integer) key + 1 : null);
-            if (!prList.isEmpty()) {
-                setPresentationState(prList.get(0), false);
-            }
-        }
-    }
-
     void setPresentationState(Object val, boolean newImage) {
 
         Object old = actionsInView.get(ActionW.PR_STATE.cmd());
@@ -1004,7 +989,7 @@ public class View2d extends DefaultView2d<DicomImageElement> {
             PresentationStateReader prReader =
                 (PresentationStateReader) getActionValue(PresentationStateReader.TAG_PR_READER);
             for (int i = 0; i < c.length; i++) {
-                c[i] = imageElement.pixel2mLUT(c[i], prReader, pixelPadding);
+                c[i] = imageElement.pixelToRealValue(c[i], prReader, pixelPadding).doubleValue();
             }
             pixelInfo.setValues(c);
         }
@@ -1158,7 +1143,7 @@ public class View2d extends DefaultView2d<DicomImageElement> {
         TitleMenuItem itemTitle =
             new TitleMenuItem(Messages.getString("View2d.left_mouse") + StringUtil.COLON, popupMenu.getInsets()); //$NON-NLS-1$
         popupMenu.add(itemTitle);
-        popupMenu.setLabel(MouseActions.LEFT);
+        popupMenu.setLabel(MouseActions.T_LEFT);
         String action = eventManager.getMouseActions().getLeft();
         ButtonGroup groupButtons = new ButtonGroup();
         int count = popupMenu.getComponentCount();
@@ -1169,7 +1154,7 @@ public class View2d extends DefaultView2d<DicomImageElement> {
                 ActionListener leftButtonAction = event -> {
                     if (event.getSource() instanceof JRadioButtonMenuItem) {
                         JRadioButtonMenuItem item = (JRadioButtonMenuItem) event.getSource();
-                        toolBar.changeButtonState(MouseActions.LEFT, item.getActionCommand());
+                        toolBar.changeButtonState(MouseActions.T_LEFT, item.getActionCommand());
                     }
                 };
 
@@ -1342,10 +1327,10 @@ public class View2d extends DefaultView2d<DicomImageElement> {
             Optional<ViewerPlugin<?>> pluginOp = UIManager.VIEWER_PLUGINS.stream()
                 .filter(p -> p instanceof View2dContainer && ((View2dContainer) p).isContainingView(View2d.this))
                 .findFirst();
-            if(!pluginOp.isPresent()) {
+            if (!pluginOp.isPresent()) {
                 return false;
             }
-            
+
             View2dContainer selPlugin = (View2dContainer) pluginOp.get();
             Series seq;
             try {

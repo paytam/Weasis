@@ -134,7 +134,7 @@ public class SeriesThumbnail extends Thumbnail {
             gc.fillText(nbImg.getText(), x + 2.0, hbleft);
         
             if (getSeries().getSeriesLoader() != null && series.getFileSize() > 0.0) {
-                String val = FileUtil.formatSize(series.getFileSize());
+                String val = FileUtil.humanReadableByte(series.getFileSize(), false);
                 gc.setFill(Color.BLACK);
                 gc.fillRect(x, hbleft - 9 - fontHeight, w + FxUtil.getTextBounds(val, font).getWidth(), fontHeight);
                 gc.setFill(Color.ORANGE);

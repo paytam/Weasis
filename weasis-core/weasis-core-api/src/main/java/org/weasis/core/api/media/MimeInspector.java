@@ -18,9 +18,6 @@ import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Properties;
@@ -31,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import org.weasis.core.api.internal.mime.InvalidMagicMimeEntryException;
 import org.weasis.core.api.internal.mime.MagicMimeEntry;
 import org.weasis.core.api.util.FileUtil;
+import org.weasis.core.api.util.StringUtil;
 
 import javafx.scene.image.Image;
 
@@ -146,7 +144,7 @@ public class MimeInspector {
 
         // Get the file extension
         String fileName = file.getName();
-        int lastPos = fileName.lastIndexOf('.'); 
+        int lastPos = fileName.lastIndexOf('.');
         String extension = lastPos > 0 ? fileName.substring(lastPos + 1).trim() : null;
 
         // Get Mime Type form the extension if the length > 0 and < 5
@@ -242,7 +240,7 @@ public class MimeInspector {
         if (mimeType == null) {
             return ""; //$NON-NLS-1$
         }
-        int offset = mimeType.indexOf('/'); 
+        int offset = mimeType.indexOf('/');
         if (offset == -1) {
             return mimeType;
         } else {
@@ -255,7 +253,7 @@ public class MimeInspector {
         if (mimeType == null) {
             return ""; //$NON-NLS-1$
         }
-        int offset = mimeType.indexOf('/'); 
+        int offset = mimeType.indexOf('/');
         if (offset == -1) {
             return mimeType;
         } else {
@@ -266,7 +264,7 @@ public class MimeInspector {
     // Utility method that gets the extension of a file from its name if it has one
     public static String getFileExtension(String fileName) {
         int lastPos;
-        if (fileName == null || (lastPos = fileName.lastIndexOf('.')) < 0) { 
+        if (fileName == null || (lastPos = fileName.lastIndexOf('.')) < 0) {
             return null;
         }
         String extension = fileName.substring(lastPos + 1);
@@ -277,20 +275,22 @@ public class MimeInspector {
         return extension;
     }
 
-    public static List<String> getExtensions(String mime) {
-        if (mime == null) {
-            return Collections.emptyList();
-        }
-        ArrayList<String> list = new ArrayList<>();
-        String[] mimes = mime.split(","); //$NON-NLS-1$
-        Set<Entry<Object, Object>> entries = mimeTypes.entrySet();
-        for (Entry<Object, Object> entry : entries) {
-            String key = (String) entry.getKey();
-            String val = (String) entry.getValue();
-            if (val != null) {
-                Arrays.stream(mimes).filter(val::equals).forEach(s -> list.add(key));
+    public static String getExtensions(String mime) {
+        if (StringUtil.hasText(mime)) {
+            Set<Entry<Object, Object>> entries = mimeTypes.entrySet();
+            for (Entry<Object, Object> entry : entries) {
+                String key = (String) entry.getKey();
+                String val = (String) entry.getValue();
+                if (StringUtil.hasText(val)) {
+                    String[] mimes = val.split(","); //$NON-NLS-1$
+                    for (String m : mimes) {
+                        if(mime.equals(m)) {
+                            return key;
+                        }
+                    }
+                }
             }
         }
-        return list;
+        return null;
     }
 }

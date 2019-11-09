@@ -481,9 +481,12 @@ public class TagD extends TagW {
         XMLStreamReader xmler = null;
         InputStream stream = null;
         try {
-            XMLInputFactory xmlif = XMLInputFactory.newInstance();
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            // disable external entities for security
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE);
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, Boolean.FALSE);
             stream = TagD.class.getResourceAsStream("/dataelements.xml"); //$NON-NLS-1$
-            xmler = xmlif.createXMLStreamReader(stream);
+            xmler = factory.createXMLStreamReader(stream);
 
             int eventType;
             while (xmler.hasNext()) {
@@ -581,7 +584,7 @@ public class TagD extends TagW {
                         // Exclude delimitation tags
                         if (tag == null || !tag.startsWith("FFFEE0")) { //$NON-NLS-1$
                             LOGGER.error("Missing attribute: {} {} {} {}", //$NON-NLS-1$
-                                new Object[] { tag, keyword, vr, vm }); // $NON-NLS-1$
+                                tag, keyword, vr, vm); // $NON-NLS-1$
                         }
                     }
 

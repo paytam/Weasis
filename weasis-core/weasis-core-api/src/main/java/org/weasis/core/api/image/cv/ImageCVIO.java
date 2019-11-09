@@ -29,6 +29,8 @@ import javax.imageio.ImageReader;
 import javax.imageio.stream.FileImageInputStream;
 import javax.imageio.stream.ImageInputStream;
 
+import org.opencv.core.Core;
+import org.opencv.core.Core.MinMaxLocResult;
 import org.opencv.core.CvType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,7 +71,7 @@ public class ImageCVIO implements MediaReader {
 
     private final FileCache fileCache;
     private final Codec codec;
-    private volatile ImageElement image = null;
+    private ImageElement image = null;
 
     public ImageCVIO(URI media, String mimeType, Codec codec) {
         this.uri = Objects.requireNonNull(media);
@@ -277,7 +279,7 @@ public class ImageCVIO implements MediaReader {
 
     @Override
     public String[] getReaderDescription() {
-        return new String[] { "Image Codec: " + codec.getCodecName() }; //$NON-NLS-1$
+        return new String[] { "Image Codec: " + codec.getCodecName(), "Version: " + Core.VERSION }; //$NON-NLS-1$ //$NON-NLS-2$
     }
 
     public ImageReader getDefaultReader(String mimeType) {
@@ -347,10 +349,10 @@ public class ImageCVIO implements MediaReader {
                         params = new HashMap<>(2);
                         double min = 0;
                         double max = 65536;
-                        double[] val = ImageProcessor.findMinMaxValues(img.toMat());
-                        if (val != null && val.length == 2) {
-                            min = val[0];
-                            max = val[1];
+                        MinMaxLocResult val = ImageProcessor.findMinMaxValues(img.toMat());
+                        if (val != null) {
+                            min = val.minVal;
+                            max = val.maxVal;
                         }
 
                         // Handle special case when min and max are equal, ex. black image
@@ -358,12 +360,12 @@ public class ImageCVIO implements MediaReader {
                         if (MathUtil.isEqual(min, max)) {
                             max += 1.0;
                         }
-                        
-                        params.put(ActionW.WINDOW.cmd(), max -min);
-                        params.put(ActionW.LEVEL.cmd(), min + (max -min) / 2.0 );
-                    } 
+
+                        params.put(ActionW.WINDOW.cmd(), max - min);
+                        params.put(ActionW.LEVEL.cmd(), min + (max - min) / 2.0);
+                    }
                     img8 = imgElement.getRenderedImage(img, params);
-                    
+
                 }
                 ImageProcessor.writeThumbnail(img8.toMat(),
                     new File(ImageFiler.changeExtension(outFile.getPath(), ".jpg")), Thumbnail.MAX_SIZE); //$NON-NLS-1$

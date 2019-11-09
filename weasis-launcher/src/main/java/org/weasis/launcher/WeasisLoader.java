@@ -1,13 +1,15 @@
 /*******************************************************************************
- * Copyright (c) 2009-2018 Weasis Team and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v2.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v20.html
- *
+ * Copyright (C) 2009-2018 Weasis Team and others
+ * 
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ * 
+ * SPDX-License-Identifier: EPL-2.0
+ * 
  * Contributors:
  *     Nicolas Roduit - initial API and implementation
- *******************************************************************************/
+ ******************************************************************************/
 package org.weasis.launcher;
 
 import java.io.File;
@@ -36,6 +38,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
 public class WeasisLoader {
+
     public static final String LBL_LOADING = Messages.getString("WebStartLoader.load"); //$NON-NLS-1$
     public static final String LBL_DOWNLOADING = Messages.getString("WebStartLoader.download"); //$NON-NLS-1$
     public static final String FRM_TITLE =
@@ -86,8 +89,8 @@ public class WeasisLoader {
         }
     }
 
-    public void setFelix(Map<String, String> serverProp, BundleContext bundleContext) {
-        AutoProcessor.process(serverProp, bundleContext, this);
+    public void setFelix(Map<String, String> serverProp, BundleContext bundleContext, Properties modulesi18n) {
+        AutoProcessor.process(serverProp, modulesi18n, bundleContext, this);
     }
 
     public void start(final Stage initStage) throws Exception {

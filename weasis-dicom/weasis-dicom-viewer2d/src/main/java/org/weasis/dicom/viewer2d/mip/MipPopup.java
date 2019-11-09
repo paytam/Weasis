@@ -30,8 +30,6 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeListener;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.weasis.core.api.gui.util.ActionState;
 import org.weasis.core.api.gui.util.ActionW;
 import org.weasis.core.api.gui.util.DecFormater;
@@ -46,10 +44,9 @@ import org.weasis.dicom.codec.DicomImageElement;
 import org.weasis.dicom.viewer2d.Messages;
 
 public class MipPopup {
-    private final Logger LOGGER = LoggerFactory.getLogger(MipPopup.class);
 
     public static MipDialog buildDialog(final MipView view) {
-        if (view == null || view.IsProcessRunning()) {
+        if (view == null || view.isProcessRunning()) {
             return null;
         }
         return new MipDialog(view);
@@ -130,7 +127,7 @@ public class MipPopup {
                     JRadioButton btn = (JRadioButton) e.getSource();
                     if (btn.isSelected()) {
                         view.setActionsInView(MipView.MIP.cmd(), MipView.Type.MIN);
-                        MipView.buildMip(MipDialog.this, view, false);
+                        MipView.buildMip(view, false);
                     }
                 }
             });
@@ -139,7 +136,7 @@ public class MipPopup {
                     JRadioButton btn = (JRadioButton) e.getSource();
                     if (btn.isSelected()) {
                         view.setActionsInView(MipView.MIP.cmd(), MipView.Type.MEAN);
-                        MipView.buildMip(MipDialog.this, view, false);
+                        MipView.buildMip(view, false);
                     }
                 }
             });
@@ -148,7 +145,7 @@ public class MipPopup {
                     JRadioButton btn = (JRadioButton) e.getSource();
                     if (btn.isSelected()) {
                         view.setActionsInView(MipView.MIP.cmd(), MipView.Type.MAX);
-                        MipView.buildMip(MipDialog.this, view, false);
+                        MipView.buildMip(view, false);
                     }
                 }
             });
@@ -172,19 +169,15 @@ public class MipPopup {
                 scrollListerner = e -> {
                     JSliderW slider = (JSliderW) e.getSource();
                     getThickness(sliderThickness);
-               //     if (!slider.getValueIsAdjusting()) {
-                        view.setActionsInView(ActionW.SCROLL_SERIES.cmd(), slider.getValue());
-                        MipView.buildMip(MipDialog.this, view, false);
-               //     }
+                    view.setActionsInView(ActionW.SCROLL_SERIES.cmd(), slider.getValue());
+                    MipView.buildMip(view, false);
                 };
                 frameSlider.addChangeListener(scrollListerner);
                 sliderThickness.addChangeListener(e -> {
                     JSliderW slider = (JSliderW) e.getSource();
                     getThickness(slider);
-                //    if (!slider.getValueIsAdjusting()) {
-                        view.setActionsInView(MipView.MIP_THICKNESS.cmd(), slider.getValue());
-                        MipView.buildMip(MipDialog.this, view, false);
-                 //   }
+                    view.setActionsInView(MipView.MIP_THICKNESS.cmd(), slider.getValue());
+                    MipView.buildMip(view, false);
                 });
             }
             JPanel panel = new JPanel();
@@ -195,7 +188,7 @@ public class MipPopup {
 
             JButton btnExitMipMode = new JButton(Messages.getString("MipPopup.rebuild_series")); //$NON-NLS-1$
             btnExitMipMode.addActionListener(e -> {
-                MipView.buildMip(MipDialog.this, view, true);
+                MipView.buildMip(view, true);
                 dispose();
             });
             panel.add(btnExitMipMode);
@@ -228,7 +221,7 @@ public class MipPopup {
 
                 if (fimg != null && limg != null) {
                     buf.append(" ("); //$NON-NLS-1$
-                    buf.append(DecFormater.oneDecimal(SeriesBuilder.getThickness(fimg, limg)));
+                    buf.append(DecFormater.allNumber(SeriesBuilder.getThickness(fimg, limg)));
                     buf.append(" "); //$NON-NLS-1$
                     buf.append(fimg.getPixelSpacingUnit().getAbbreviation());
                     buf.append(")"); //$NON-NLS-1$

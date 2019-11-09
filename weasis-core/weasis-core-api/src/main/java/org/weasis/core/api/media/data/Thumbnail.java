@@ -85,7 +85,7 @@ public class Thumbnail extends Canvas implements Thumbnailable {
 
     protected BooleanProperty lockedProperty = new SimpleBooleanProperty(false);
     protected volatile boolean readable = true;
-    protected volatile AtomicBoolean loading = new AtomicBoolean(false);
+    protected AtomicBoolean loading = new AtomicBoolean(false);
     protected File thumbnailPath = null;
 
     protected MediaElement media;
@@ -289,7 +289,7 @@ public class Thumbnail extends Canvas implements Thumbnailable {
                         }
                         try {
                             if (thumb != null && file != null) {
-                                MatOfInt map = new MatOfInt(Imgcodecs.CV_IMWRITE_JPEG_QUALITY, 80);
+                                MatOfInt map = new MatOfInt(Imgcodecs.IMWRITE_JPEG_QUALITY, 80);
                                 if (ImageProcessor.writeImage(thumb.toMat(), file, map)) {
                                     /*
                                      * Write the thumbnail in temp folder, better than getting the thumbnail directly
@@ -307,6 +307,7 @@ public class Thumbnail extends Canvas implements Thumbnailable {
 
                             if (thumb == null || thumb.width() <= 0) {
                                 readable = false;
+                                ImageConversion.releasePlanarImage(thumb);
                             } else {
                                 mCache.put(this, thumb);
                             }

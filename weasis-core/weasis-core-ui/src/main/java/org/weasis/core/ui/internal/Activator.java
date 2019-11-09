@@ -24,7 +24,7 @@ public class Activator implements BundleActivator {
     public void start(final BundleContext bundleContext) throws Exception {
         File dataFolder = AppProperties.getBundleDataFolder(bundleContext);
         if (dataFolder != null) {
-            FileUtil.readProperties(new File(dataFolder, "persitence.properties"), BundleTools.LOCAL_PERSISTENCE);//$NON-NLS-1$
+            FileUtil.readProperties(new File(dataFolder, "persitence.properties"), BundleTools.LOCAL_UI_PERSISTENCE);//$NON-NLS-1$
         }
     }
 
@@ -34,7 +34,7 @@ public class Activator implements BundleActivator {
         if (dataFolder != null) {
             File file = new File(dataFolder, "persitence.properties"); //$NON-NLS-1$
             FileUtil.prepareToWriteFile(file);
-            FileUtil.storeProperties(file, BundleTools.LOCAL_PERSISTENCE, null);
+            FileUtil.storeProperties(file, BundleTools.LOCAL_UI_PERSISTENCE, null);
         }
     }
 }

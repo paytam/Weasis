@@ -667,7 +667,7 @@ public class MenuController {
 
     private void loadLuts() {
         List<ByteLut> luts = new ArrayList<>();
-        luts.add(ByteLut.grayLUT);
+        luts.add(ByteLutCollection.Lut.GRAY.getByteLut());
         ByteLutCollection.readLutFilesFromResourcesDir(luts, ResourceUtil.getResource("luts"));
 
         if (luts != null) {

@@ -76,6 +76,9 @@ import org.weasis.opencv.data.LookupTableCV;
  */
 public class DicomMediaUtils {
 
+    private DicomMediaUtils() {
+    }
+
     private static final Logger LOGGER = LoggerFactory.getLogger(DicomMediaUtils.class);
 
     private static final int[] modalityLutAttributes = new int[] { Tag.RescaleIntercept, Tag.RescaleSlope };
@@ -926,7 +929,7 @@ public class DicomMediaUtils {
                             || "PT".equals(modality))) { //$NON-NLS-1$
                         int windowLevelDefaultCount = (ww.length == wc.length) ? ww.length : 0;
                         for (int i = 0; i < windowLevelDefaultCount; i++) {
-                            ww[i] = (ww[i] - ri) / rs;
+                            ww[i] = ww[i] / rs;
                             wc[i] = (wc[i] - ri) / rs;
                         }
                     }
@@ -1312,9 +1315,12 @@ public class DicomMediaUtils {
         XMLStreamReader xmler = null;
         InputStream stream = null;
         try {
-            XMLInputFactory xmlif = XMLInputFactory.newInstance();
+            XMLInputFactory factory = XMLInputFactory.newInstance();
+            // disable external entities for security
+            factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE);
+            factory.setProperty(XMLInputFactory.SUPPORT_DTD, Boolean.FALSE);
             stream = DicomMediaUtils.class.getResourceAsStream("/config/KeyObjectSelectionCodes.xml"); //$NON-NLS-1$
-            xmler = xmlif.createXMLStreamReader(stream);
+            xmler = factory.createXMLStreamReader(stream);
 
             while (xmler.hasNext()) {
                 switch (xmler.next()) {

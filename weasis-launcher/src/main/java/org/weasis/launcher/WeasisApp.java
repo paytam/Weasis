@@ -1,7 +1,10 @@
 package org.weasis.launcher;
 
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+
+import org.weasis.launcher.WeasisLauncher.Type;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -17,7 +20,20 @@ public class WeasisApp extends Application {
 
         Executors.defaultThreadFactory().newThread(() -> {
             // Thread.currentThread().setContextClassLoader(WeasisLauncher.class.getClassLoader());
-            WeasisLauncher.launch(getParameters(), WeasisApp.this);
+            List<String> rawArg = getParameters().getRaw();
+            String[] argv = rawArg.toArray(new String[rawArg.size()]);
+
+            ConfigData configData = new ConfigData(argv);
+            if (!Singleton.invoke(configData)) {
+                AppLauncher instance = new AppLauncher(this, configData);
+                Singleton.start(instance, configData.getSourceID());
+                try {
+                    instance.launch(Type.NATIVE);
+                } catch (Exception e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
         }).start();
     }
 

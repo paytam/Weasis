@@ -20,7 +20,6 @@ import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.net.SocketTimeoutException;
 import java.net.URI;
-import java.net.URLConnection;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
@@ -28,7 +27,6 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.Enumeration;
@@ -47,17 +45,11 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.weasis.core.api.Messages;
 
 public final class FileUtil {
     private static final Logger LOGGER = LoggerFactory.getLogger(FileUtil.class);
 
     public static final int FILE_BUFFER = 4096;
-    private static final double BASE = 1024;
-    private static final double KB = BASE;
-    private static final double MB = KB * BASE;
-    private static final double GB = MB * BASE;
-    private static final DecimalFormat DEC_FORMAT = new DecimalFormat("#.##"); //$NON-NLS-1$
     private static final int[] ILLEGAL_CHARS = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
         20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 34, 42, 47, 58, 60, 62, 63, 92, 124 };
 
@@ -140,7 +132,7 @@ public final class FileUtil {
     public static void getAllFilesInDirectory(File directory, List<File> files) {
         getAllFilesInDirectory(directory, files, true);
     }
-    
+
     public static void getAllFilesInDirectory(File directory, List<File> files, boolean recursive) {
         File[] fList = directory.listFiles();
         for (File f : fList) {
@@ -268,31 +260,6 @@ public final class FileUtil {
     }
 
     /**
-     * Write URL content into a file
-     *
-     * @param urlConnection
-     * @param outFile
-     * @throws StreamIOException
-     */
-    public static void writeStreamWithIOException(URLConnection urlConnection, File outFile) throws StreamIOException {
-        try (InputStream urlInputStream = NetworkUtil.getUrlInputStream(urlConnection);
-                        FileOutputStream outputStream = new FileOutputStream(outFile)) {
-            byte[] buf = new byte[FILE_BUFFER];
-            int offset;
-            while ((offset = urlInputStream.read(buf)) > 0) {
-                outputStream.write(buf, 0, offset);
-            }
-            outputStream.flush();
-        } catch (StreamIOException e) {
-            FileUtil.delete(outFile);
-            throw e;
-        } catch (IOException e) {
-            FileUtil.delete(outFile);
-            throw new StreamIOException(e);
-        }
-    }
-
-    /**
      * Write inputStream content into a file
      *
      * @param inputStream
@@ -323,6 +290,11 @@ public final class FileUtil {
      * @throws StreamIOException
      */
     public static int writeStream(InputStream inputStream, File outFile) throws StreamIOException {
+        return writeStream(inputStream, outFile, true);
+    }
+
+    public static int writeStream(InputStream inputStream, File outFile, boolean closeInputStream)
+        throws StreamIOException {
         try (FileOutputStream outputStream = new FileOutputStream(outFile)) {
             byte[] buf = new byte[FILE_BUFFER];
             int offset;
@@ -343,7 +315,9 @@ public final class FileUtil {
             FileUtil.delete(outFile);
             throw new StreamIOException(e);
         } finally {
-            FileUtil.safeClose(inputStream);
+            if (closeInputStream) {
+                FileUtil.safeClose(inputStream);
+            }
         }
     }
 
@@ -372,26 +346,12 @@ public final class FileUtil {
         }
     }
 
-    public static String formatSize(double size) {
-        StringBuilder buf = new StringBuilder();
-        if (size >= GB) {
-            buf.append(DEC_FORMAT.format(size / GB));
-            buf.append(' ');
-            buf.append(Messages.getString("FileUtil.gb")); //$NON-NLS-1$
-        } else if (size >= MB) {
-            buf.append(DEC_FORMAT.format(size / MB));
-            buf.append(' ');
-            buf.append(Messages.getString("FileUtil.mb")); //$NON-NLS-1$
-        } else if (size >= KB) {
-            buf.append(DEC_FORMAT.format(size / KB));
-            buf.append(' ');
-            buf.append(Messages.getString("FileUtil.kb")); //$NON-NLS-1$
-        } else {
-            buf.append((int) size);
-            buf.append(' ');
-            buf.append(Messages.getString("FileUtil.bytes"));//$NON-NLS-1$
-        }
-        return buf.toString();
+    public static String humanReadableByte(long bytes, boolean si) {
+        int unit = si ? 1000 : 1024;
+        if (bytes < unit) return bytes + " B"; //$NON-NLS-1$
+        int exp = (int) (Math.log(bytes) / Math.log(unit));
+        String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp-1) + (si ? "" : "i"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+        return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre); //$NON-NLS-1$
     }
 
     public static boolean nioWriteFile(FileInputStream inputStream, FileOutputStream out) {
@@ -420,9 +380,9 @@ public final class FileUtil {
             ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
 
             while (readChannel.read(buffer) != -1) {
-                buffer.flip();
+                LangUtil.safeBufferType(buffer).flip();
                 writeChannel.write(buffer);
-                buffer.clear();
+                LangUtil.safeBufferType(buffer).clear();
             }
             return true;
         } catch (IOException e) {

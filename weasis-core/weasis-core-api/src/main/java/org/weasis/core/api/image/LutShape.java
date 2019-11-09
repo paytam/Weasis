@@ -53,19 +53,15 @@ public final class LutShape {
 
     // //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-    public static final List<LutShape> DEFAULT_FACTORY_FUNCTIONS;
+    public static final List<LutShape> DEFAULT_FACTORY_FUNCTIONS = new ArrayList<>();
 
     static {
-        DEFAULT_FACTORY_FUNCTIONS = new ArrayList<>();
-
         DEFAULT_FACTORY_FUNCTIONS.add(LutShape.LINEAR);
         DEFAULT_FACTORY_FUNCTIONS.add(LutShape.SIGMOID);
         DEFAULT_FACTORY_FUNCTIONS.add(LutShape.SIGMOID_NORM);
         DEFAULT_FACTORY_FUNCTIONS.add(LutShape.LOG);
         DEFAULT_FACTORY_FUNCTIONS.add(LutShape.LOG_INV);
     }
-
 
     // //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

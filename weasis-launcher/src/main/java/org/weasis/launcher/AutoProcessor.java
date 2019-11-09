@@ -1,13 +1,15 @@
 /*******************************************************************************
- * Copyright (c) 2009-2018 Weasis Team and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v2.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v20.html
- *
+ * Copyright (C) 2009-2018 Weasis Team and others
+ * 
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ * 
+ * SPDX-License-Identifier: EPL-2.0
+ * 
  * Contributors:
  *     Nicolas Roduit - initial API and implementation
- *******************************************************************************/
+ ******************************************************************************/
 package org.weasis.launcher;
 
 import java.io.File;
@@ -22,11 +24,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Pack200;
 import java.util.jar.Pack200.Unpacker;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 
 import org.osgi.framework.Bundle;
@@ -36,6 +41,8 @@ import org.osgi.framework.Constants;
 import org.osgi.service.startlevel.StartLevel;
 
 public class AutoProcessor {
+
+    private static final Logger LOGGER = Logger.getLogger(FileUtil.class.getName());
 
     /**
      * The property name used for the bundle directory.
@@ -80,6 +87,9 @@ public class AutoProcessor {
 
     public static final String PACK200_COMPRESSION = ".pack.gz"; //$NON-NLS-1$
 
+    private AutoProcessor() {
+    }
+
     /**
      * Used to instigate auto-deploy directory process and auto-install/auto-start configuration property processing
      * during.
@@ -90,10 +100,11 @@ public class AutoProcessor {
      *            The system bundle context.
      * @param weasisLoader
      **/
-    public static void process(Map<String, String> configMap, BundleContext context, WeasisLoader weasisLoader) {
+    public static void process(Map<String, String> configMap, Properties modulesi18n, BundleContext context,
+        WeasisLoader weasisLoader) {
         Map<String, String> map = (configMap == null) ? new HashMap<>() : configMap;
         processAutoDeploy(map, context, weasisLoader);
-        processAutoProperties(map, context, weasisLoader);
+        processAutoProperties(map, modulesi18n, context, weasisLoader);
     }
 
     /**
@@ -127,7 +138,7 @@ public class AutoProcessor {
             int startLevel = sl.getInitialBundleStartLevel();
             if (configMap.get(AUTO_DEPLOY_STARTLEVEL_PROPERTY) != null) {
                 try {
-                    startLevel = Integer.parseInt(configMap.get(AUTO_DEPLOY_STARTLEVEL_PROPERTY).toString());
+                    startLevel = Integer.parseInt(configMap.get(AUTO_DEPLOY_STARTLEVEL_PROPERTY));
                 } catch (NumberFormatException ex) {
                     // Ignore and keep default level.
                 }
@@ -156,6 +167,9 @@ public class AutoProcessor {
                 }
             }
             weasisLoader.setMax(jarList.size());
+
+            boolean cache =
+                Boolean.TRUE.toString().equals(System.getProperty("http.bundle.cache", Boolean.TRUE.toString())); //$NON-NLS-1$
             // Install bundle JAR files and remember the bundle objects.
             final List<Bundle> startBundleList = new ArrayList<>();
             for (int i = 0; i < jarList.size(); i++) {
@@ -170,7 +184,7 @@ public class AutoProcessor {
                     // If the bundle is not already installed, then install it
                     // if the 'install' action is present.
                     if ((b == null) && actionList.contains(AUTO_DEPLOY_INSTALL_VALUE)) {
-                        b = installBundle(context, jarList.get(i).toURI().toString());
+                        b = installBundle(context, jarList.get(i).toURI().toString(), cache);
                     }
                     // If the bundle is already installed, then update it
                     // if the 'update' action is present.
@@ -190,8 +204,7 @@ public class AutoProcessor {
                     }
 
                 } catch (Exception ex) {
-                    System.err.println("Auto-deploy install: " + ex //$NON-NLS-1$
-                        + ((ex.getCause() != null) ? " - " + ex.getCause() : "")); //$NON-NLS-1$ //$NON-NLS-2$
+                    LOGGER.log(Level.SEVERE, ex, () -> String.format("Auto-deploy install %s", jar.getName())); //$NON-NLS-1$
                     if (!Constants.FRAMEWORK_STORAGE_CLEAN_ONFIRSTINIT
                         .equals(configMap.get(Constants.FRAMEWORK_STORAGE_CLEAN))) {
                         // Reset all the old cache
@@ -210,7 +223,8 @@ public class AutoProcessor {
                         try {
                             b.uninstall();
                         } catch (BundleException ex) {
-                            printError(ex, "Auto-deploy uninstall: "); //$NON-NLS-1$
+                            LOGGER.log(Level.SEVERE, ex,
+                                () -> String.format("Auto-deploy uninstall bundle %s", b.getSymbolicName())); //$NON-NLS-1$
                         }
                     }
                 }
@@ -220,11 +234,12 @@ public class AutoProcessor {
             // action is present.
             if (actionList.contains(AUTO_DEPLOY_START_VALUE)) {
                 for (int i = 0; i < startBundleList.size(); i++) {
+                    Bundle b = startBundleList.get(i);
                     try {
-                        startBundleList.get(i).start();
-
+                        b.start();
                     } catch (BundleException ex) {
-                        printError(ex, "Auto-deploy start: "); //$NON-NLS-1$
+                        LOGGER.log(Level.SEVERE, ex,
+                            () -> String.format("Auto-deploy install bundle %s", b.getSymbolicName())); //$NON-NLS-1$
                     }
                 }
             }
@@ -236,8 +251,8 @@ public class AutoProcessor {
      * Processes the auto-install and auto-start properties from the specified configuration properties.
      * </p>
      */
-    private static void processAutoProperties(Map<String, String> configMap, BundleContext context,
-        WeasisLoader weasisLoader) {
+    private static void processAutoProperties(Map<String, String> configMap, Properties modulesi18n,
+        BundleContext context, WeasisLoader weasisLoader) {
         // Retrieve the Start Level service, since it will be needed
         // to set the start level of the installed bundles.
         StartLevel sl = (StartLevel) context
@@ -269,7 +284,7 @@ public class AutoProcessor {
             try {
                 startLevel = Integer.parseInt(key.substring(key.lastIndexOf('.') + 1));
             } catch (NumberFormatException ex) {
-                System.err.println("Invalid start level: " + key); //$NON-NLS-1$
+                LOGGER.log(Level.SEVERE, ex, () -> String.format("Invalid start level %s", key)); //$NON-NLS-1$
             }
             boolean canBeStarted = key.startsWith(AUTO_START_PROP);
             StringTokenizer st = new StringTokenizer(configMap.get(key), "\" ", true); //$NON-NLS-1$
@@ -297,23 +312,26 @@ public class AutoProcessor {
                 if (b == null) {
                     if (!"System Bundle".equals(bundleName)) {//$NON-NLS-1$
                         bundles[i].uninstall();
-                        System.out.println("Uninstall not used: " + bundleName); //$NON-NLS-1$
+                        LOGGER.log(Level.INFO, "Uninstall unused bundle: {0}", bundleName); //$NON-NLS-1$
                     }
                     continue;
                 }
                 // Remove snapshot version to install it every time
                 if (bundles[i].getVersion().getQualifier().endsWith("SNAPSHOT")) { //$NON-NLS-1$
                     bundles[i].uninstall();
-                    System.out.println("Uninstall SNAPSHOT: " + bundleName); //$NON-NLS-1$
+                    LOGGER.log(Level.INFO, "Uninstall SNAPSHOT bundle: {0}", bundleName); //$NON-NLS-1$
                     continue;
                 }
                 installedBundleMap.put(bundleName, bundles[i]);
 
             } catch (Exception e) {
-                System.err.println("Cannot remove from OSGI cache: " + bundleName); //$NON-NLS-1$
+                LOGGER.log(Level.SEVERE, e,
+                    () -> String.format("Cannot remove from OSGI cache the bundle %s", bundleName)); //$NON-NLS-1$
             }
         }
 
+        boolean cache =
+            Boolean.TRUE.toString().equals(System.getProperty("http.bundle.cache", Boolean.TRUE.toString())); //$NON-NLS-1$
         int bundleIter = 0;
 
         // Parse and install the bundles associated with the key.
@@ -331,19 +349,16 @@ public class AutoProcessor {
                 // in cache from a previous version of Weasis
                 Bundle b = installedBundleMap.get(bundleName);
                 if (b == null) {
-                    b = installBundle(context, bundle.getLocation());
+                    b = installBundle(context, bundle.getLocation(), cache);
                     installedBundleMap.put(bundleName, b);
                 }
                 sl.setBundleStartLevel(b, bundle.getStartLevel());
-                loadTranslationBundle(context, b, installedBundleMap);
+                loadTranslationBundle(context, b, installedBundleMap, modulesi18n);
             } catch (Exception ex) {
                 if (bundleName.contains(System.getProperty("native.library.spec"))) { //$NON-NLS-1$
-                    System.err.println("Cannot install native bundle: " + bundleName); //$NON-NLS-1$
+                    LOGGER.log(Level.SEVERE, ex, () -> String.format("Cannot install a native bundle %s", bundleName)); //$NON-NLS-1$
                 } else {
-                    printError(ex, "Cannot install bundle: " + bundleName); //$NON-NLS-1$
-                    if (ex.getCause() != null) {
-                        ex.printStackTrace();
-                    }
+                    LOGGER.log(Level.SEVERE, ex, () -> String.format("Cannot install bundle %s", bundleName)); //$NON-NLS-1$
                     if (!Constants.FRAMEWORK_STORAGE_CLEAN_ONFIRSTINIT
                         .equals(configMap.get(Constants.FRAMEWORK_STORAGE_CLEAN))) {
                         // Reset all the old cache
@@ -372,21 +387,21 @@ public class AutoProcessor {
                     Bundle b = installedBundleMap.get(bundleName);
                     if (b == null) {
                         // Try to reinstall
-                        b = installBundle(context, bundle.getLocation());
+                        b = installBundle(context, bundle.getLocation(), cache);
                     }
                     if (b != null) {
                         b.start();
                     }
                 } catch (Exception ex) {
-                    printError(ex, "Cannot start bundle: " + bundleName); //$NON-NLS-1$
+                    LOGGER.log(Level.SEVERE, ex, () -> String.format("Cannot start bundle %s", bundleName)); //$NON-NLS-1$
                 }
             }
         }
     }
 
-    private static String getBundleNameFromLocation(String location) {
+    static String getBundleNameFromLocation(String location) {
         if (location != null) {
-            int index = location.lastIndexOf("/"); //$NON-NLS-1$
+            int index = location.lastIndexOf('/');
             String name = index >= 0 ? location.substring(index + 1) : location;
             index = name.lastIndexOf(".jar"); //$NON-NLS-1$
             return index >= 0 ? name.substring(0, index) : name;
@@ -395,8 +410,8 @@ public class AutoProcessor {
     }
 
     private static void loadTranslationBundle(BundleContext context, Bundle b,
-        final Map<String, Bundle> installedBundleMap) {
-        if (WeasisLauncher.modulesi18n != null) {
+        final Map<String, Bundle> installedBundleMap, Properties modulesi18n) {
+        if (!modulesi18n.isEmpty()) {
             if (b != null) {
                 StringBuilder p = new StringBuilder(b.getSymbolicName());
                 p.append("-i18n-"); //$NON-NLS-1$
@@ -405,9 +420,9 @@ public class AutoProcessor {
                 p.append("2.0.0"); //$NON-NLS-1$
                 p.append(".jar"); //$NON-NLS-1$
                 String filename = p.toString();
-                String value = WeasisLauncher.modulesi18n.getProperty(filename);
+                String value = modulesi18n.getProperty(filename);
                 if (value != null) {
-                    String baseURL = System.getProperty("weasis.i18n"); //$NON-NLS-1$
+                    String baseURL = System.getProperty(WeasisLauncher.P_WEASIS_I18N); 
                     if (baseURL != null) {
                         String uri = baseURL + (baseURL.endsWith("/") ? filename : "/" + filename); //$NON-NLS-1$ //$NON-NLS-2$
                         String bundleName = getBundleNameFromLocation(filename);
@@ -415,7 +430,7 @@ public class AutoProcessor {
                             Bundle b2 = installedBundleMap.get(bundleName);
                             if (b2 == null) {
                                 b2 = context.installBundle(uri,
-                                    FileUtil.getAdaptedConnection(new URI(uri).toURL()).getInputStream());
+                                    FileUtil.getAdaptedConnection(new URI(uri).toURL(), false).getInputStream());
                                 installedBundleMap.put(bundleName, b);
                             }
                             if (b2 != null && !value.equals(b2.getVersion().getQualifier())) {
@@ -425,26 +440,23 @@ public class AutoProcessor {
                                     // Handle same bundle version with different location
                                     try {
                                         b2.uninstall();
-                                        context.installBundle(uri,
-                                            FileUtil.getAdaptedConnection(new URI(uri).toURL()).getInputStream());
+                                        context.installBundle(uri, FileUtil
+                                            .getAdaptedConnection(new URI(uri).toURL(), false).getInputStream());
                                         installedBundleMap.put(bundleName, b);
                                     } catch (Exception exc) {
-                                        System.err.println("Cannot install translation pack: " + uri); //$NON-NLS-1$
+                                        LOGGER.log(Level.SEVERE, exc,
+                                            () -> String.format("Cannot install a translation bundle %s", uri)); //$NON-NLS-1$
                                     }
                                 }
                             }
                         } catch (Exception e) {
-                            System.err.println("Cannot install translation pack: " + uri); //$NON-NLS-1$
+                            LOGGER.log(Level.SEVERE, e,
+                                () -> String.format("Cannot install a translation bundle %s", uri)); //$NON-NLS-1$
                         }
                     }
                 }
             }
         }
-    }
-
-    private static void printError(Exception ex, String prefix) {
-        System.err.println(prefix + " (" + ex //$NON-NLS-1$
-            + ((ex.getCause() != null) ? " - " + ex.getCause() : "") + ")"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
     }
 
     private static String nextLocation(StringTokenizer st) {
@@ -485,6 +497,10 @@ public class AutoProcessor {
             if ((!exit) && (tokStarted)) {
                 retVal = tokBuf.toString();
             }
+
+            if (Utils.hasText(retVal)) {
+                retVal = Utils.adaptPathToUri(retVal);
+            }
         }
 
         return retVal;
@@ -494,7 +510,7 @@ public class AutoProcessor {
         return bundle.getHeaders().get(Constants.FRAGMENT_HOST) != null;
     }
 
-    private static Bundle installBundle(BundleContext context, String location) throws Exception {
+    private static Bundle installBundle(BundleContext context, String location, boolean httpCache) throws Exception {
         boolean pack = location.endsWith(PACK200_COMPRESSION);
         if (pack) {
             // Remove the pack classifier from the location path
@@ -508,13 +524,12 @@ public class AutoProcessor {
             try (final PipedOutputStream out = new PipedOutputStream(in)) {
                 Thread t = new Thread(() -> {
                     try (JarOutputStream jarStream = new JarOutputStream(out);
-                                    GZIPInputStream gzStream =
-                                        new GZIPInputStream(FileUtil.getAdaptedConnection(url).getInputStream())) {
+                                    GZIPInputStream gzStream = new GZIPInputStream(
+                                        FileUtil.getAdaptedConnection(url, httpCache).getInputStream())) {
                         Unpacker unpacker = Pack200.newUnpacker();
                         unpacker.unpack(gzStream, jarStream);
-                    } catch (Exception e1) {
-                        System.err.println("Cannot install pack bundle: " + url); //$NON-NLS-1$
-                        e1.printStackTrace();
+                    } catch (Exception e) {
+                        LOGGER.log(Level.SEVERE, e, () -> String.format("Cannot install a pack bundle %s", url)); //$NON-NLS-1$
                     }
                 });
                 t.start();
@@ -522,7 +537,7 @@ public class AutoProcessor {
             }
         }
         return context.installBundle(location,
-            FileUtil.getAdaptedConnection(new URI(location).toURL()).getInputStream());
+            FileUtil.getAdaptedConnection(new URI(location).toURL(), httpCache).getInputStream());
     }
 
     static class BundleElement {

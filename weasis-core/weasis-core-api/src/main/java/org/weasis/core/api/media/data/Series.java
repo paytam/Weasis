@@ -46,7 +46,7 @@ public abstract class Series<E extends MediaElement> extends MediaSeriesGroupNod
     protected final Map<Comparator<E>, List<E>> sortedMedias = new HashMap<>(6);
     protected final Comparator<E> mediaOrder;
     protected SeriesImporter seriesLoader;
-    private double fileSize;
+    private long fileSize;
 
     public Series(TagW tagID, Object identifier, TagView displayTag) {
         this(tagID, identifier, displayTag, null);
@@ -66,7 +66,7 @@ public abstract class Series<E extends MediaElement> extends MediaSeriesGroupNod
         List<E> ls = list;
         if (ls == null) {
             ls = new ArrayList<>();
-            fileSize = 0.0;
+            fileSize = 0L;
         } else if (mediaOrder != null) {
             Collections.sort(ls, mediaOrder);
         }
@@ -92,13 +92,11 @@ public abstract class Series<E extends MediaElement> extends MediaSeriesGroupNod
     public List<E> getSortedMedias(Comparator<E> comparator) {
         // Do not sort when it is the default order.
         if (comparator != null && !comparator.equals(mediaOrder)) {
-            List<E> sorted = sortedMedias.get(comparator);
-            if (sorted == null) {
-                sorted = new ArrayList<>(medias);
+            return sortedMedias.computeIfAbsent(comparator, k -> {
+                List<E> sorted = new ArrayList<>(medias);
                 Collections.sort(sorted, comparator);
-                sortedMedias.put(comparator, sorted);
-            }
-            return sorted;
+                return sorted;
+            });
         }
         return medias;
     }
@@ -402,12 +400,12 @@ public abstract class Series<E extends MediaElement> extends MediaSeriesGroupNod
         return -1;
     }
 
-    public synchronized void setFileSize(double size) {
+    public synchronized void setFileSize(long size) {
         fileSize = size;
     }
 
     @Override
-    public synchronized double getFileSize() {
+    public synchronized long getFileSize() {
         return fileSize;
     }
 

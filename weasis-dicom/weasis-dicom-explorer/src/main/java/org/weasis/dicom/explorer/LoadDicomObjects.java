@@ -43,6 +43,7 @@ import org.weasis.dicom.codec.TagD.Level;
 public class LoadDicomObjects extends ExplorerTask<Boolean> {
 
     private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(LoadDicomObjects.class);
+    
     private final Attributes[] dicomObjectsToLoad;
     private final DicomModel dicomModel;
 
@@ -157,7 +158,7 @@ public class LoadDicomObjects extends ExplorerTask<Boolean> {
                 if (t == null) {
                     t = DicomModel.createThumbnail(dicomSeries, dicomModel, Thumbnail.DEFAULT_SIZE);
                     dicomSeries.setTag(TagW.Thumbnail, t);
-                    Optional.ofNullable(t).ifPresent(v -> v.repaint());
+                    Optional.ofNullable(t).ifPresent(SeriesThumbnail::repaint);
                 }
 
                 if (DicomModel.isSpecialModality(dicomSeries)) {
@@ -224,9 +225,7 @@ public class LoadDicomObjects extends ExplorerTask<Boolean> {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            // dicomReader.reset();
+            LOGGER.error("Build DICOM hierarchy", e); //$NON-NLS-1$
         }
         return thumb;
     }

@@ -34,6 +34,7 @@ import org.weasis.core.api.image.PseudoColorOp;
 import org.weasis.core.api.image.SimpleOpManager;
 import org.weasis.core.api.image.WindowOp;
 import org.weasis.core.api.image.op.ByteLut;
+import org.weasis.core.api.image.op.ByteLutCollection;
 import org.weasis.core.api.image.util.KernelData;
 import org.weasis.core.api.media.data.ImageElement;
 import org.weasis.core.api.media.data.MediaSeries;
@@ -175,8 +176,7 @@ public class MainCanvas extends Canvas {
         this.setActionsInView(ActionW.LEVEL_MIN.cmd(), null);
         this.setActionsInView(ActionW.LEVEL_MAX.cmd(), null);
         this.setActionsInView(ActionW.INVERT_LUT.cmd(), false);
-        this.setActionsInView(ActionW.LUT.cmd(), ByteLut.grayLUT);
-
+        this.setActionsInView(ActionW.LUT.cmd(), ByteLutCollection.Lut.GRAY.getByteLut());
         if (scrollController != null) {
             scrollController.setValue(0);
         }
@@ -186,7 +186,7 @@ public class MainCanvas extends Canvas {
 
         manager.setParamValue(FilterOp.OP_NAME, FilterOp.P_KERNEL_DATA, KernelData.NONE);
 
-        manager.setParamValue(PseudoColorOp.OP_NAME, PseudoColorOp.P_LUT, ByteLut.grayLUT);
+        manager.setParamValue(PseudoColorOp.OP_NAME, PseudoColorOp.P_LUT, ByteLutCollection.Lut.GRAY.getByteLut());
         manager.setParamValue(PseudoColorOp.OP_NAME, PseudoColorOp.P_LUT_INVERSE, false);
 
         manager.setParamValue(ShutterOp.OP_NAME, ShutterOp.P_SHOW, true);
@@ -622,8 +622,8 @@ public class MainCanvas extends Canvas {
     public void reset() {
         if (image != null) {
             this.setInvertLUT(false);
-            manager.setParamValue(PseudoColorOp.OP_NAME, PseudoColorOp.P_LUT, ByteLut.grayLUT);
-            this.setActionsInView(ActionW.LUT.cmd(), ByteLut.grayLUT);
+            manager.setParamValue(PseudoColorOp.OP_NAME, PseudoColorOp.P_LUT, ByteLutCollection.Lut.GRAY.getByteLut());
+            this.setActionsInView(ActionW.LUT.cmd(), ByteLutCollection.Lut.GRAY.getByteLut());
             setPresetWindowLevel(((List<PresetWindowLevel>) getActionValue(PRESET_LIST_WINDOW_LEVEL)).get(0).getName());
             this.setActionsInView(ActionW.ZOOM.cmd(), 1.0);
             draw();

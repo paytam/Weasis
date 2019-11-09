@@ -21,17 +21,19 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.opencv.core.Core.MinMaxLocResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weasis.core.api.gui.util.ActionW;
 import org.weasis.core.api.gui.util.MathUtil;
-import org.weasis.core.api.image.CvUtil;
 import org.weasis.core.api.image.LutShape;
 import org.weasis.core.api.image.OpManager;
 import org.weasis.core.api.image.ZoomOp;
+import org.weasis.core.api.image.cv.CvUtil;
 import org.weasis.core.api.image.measure.MeasurementsAdapter;
 import org.weasis.core.api.image.util.Unit;
 import org.weasis.core.api.util.ThreadUtil;
+import org.weasis.opencv.data.LookupTableCV;
 import org.weasis.opencv.data.PlanarImage;
 import org.weasis.opencv.op.ImageConversion;
 import org.weasis.opencv.op.ImageProcessor;
@@ -89,10 +91,10 @@ public class ImageElement extends MediaElement {
                 this.minPixelValue = 0.0;
                 this.maxPixelValue = 255.0;
             } else {
-                double[] val = ImageProcessor.findMinMaxValues(img.toMat());
-                if (val != null && val.length == 2) {
-                    this.minPixelValue = val[0];
-                    this.maxPixelValue = val[1];
+                MinMaxLocResult val = ImageProcessor.findMinMaxValues(img.toMat());
+                if (val != null) {
+                    this.minPixelValue = val.minVal;
+                    this.maxPixelValue = val.maxVal;
                 }
 
                 // Handle special case when min and max are equal, ex. black image
@@ -137,6 +139,14 @@ public class ImageElement extends MediaElement {
     }
 
     public double getMinValue(TagReadable tagable, boolean pixelPadding) {
+        return minPixelValue == null ? 0.0 : minPixelValue;
+    }
+    
+    public double getPixelMax() {
+        return maxPixelValue == null ? 0.0 : maxPixelValue;
+    }
+
+    public double getPixelMin() {
         return minPixelValue == null ? 0.0 : minPixelValue;
     }
 
@@ -210,6 +220,15 @@ public class ImageElement extends MediaElement {
 
     public String getPixelSizeCalibrationDescription() {
         return pixelSizeCalibrationDescription;
+    }
+    
+    public Number pixelToRealValue(Number pixelValue, TagReadable tagable, boolean pixelPadding) {
+        return pixelValue;
+    }
+    
+    public LookupTableCV getVOILookup(TagReadable tagable, Double window, Double level, Double minLevel,
+        Double maxLevel, LutShape shape, boolean fillLutOutside, boolean pixelPadding) {
+            return null;
     }
 
     public MeasurementsAdapter getMeasurementAdapter(Unit displayUnit, Point offset) {
@@ -399,7 +418,6 @@ public class ImageElement extends MediaElement {
             PlanarImage img = null;
             try {
                 img = future.get();
-
             } catch (InterruptedException e) {
                 // Re-assert the thread's interrupted status
                 Thread.currentThread().interrupt();

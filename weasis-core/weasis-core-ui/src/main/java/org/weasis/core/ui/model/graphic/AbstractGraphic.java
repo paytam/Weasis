@@ -336,7 +336,7 @@ public abstract class AbstractGraphic extends DefaultUUID implements Graphic {
         growingSize /= GeomUtil.extractScalingFactor(transform);
         GeomUtil.growRectangle(bounds, growingSize);
 
-        return Optional.ofNullable(bounds).map(b -> b.getBounds()).orElse(null);
+        return Optional.ofNullable(bounds).map(Rectangle2D::getBounds).orElse(null);
     }
 
     @Override
@@ -631,7 +631,7 @@ public abstract class AbstractGraphic extends DefaultUUID implements Graphic {
     @Override
     public int getHandlePointIndex(MouseEventDouble mouseEvent) {
         int nearestHandlePtIndex = -1;
-        final Point2D mousePoint = Optional.ofNullable(mouseEvent).map(evt -> evt.getImageCoordinates()).orElse(null);
+        final Point2D mousePoint = Optional.ofNullable(mouseEvent).map(MouseEventDouble::getImageCoordinates).orElse(null);
 
         if (mousePoint != null && !pts.isEmpty() && !layer.getLocked()) {
             double minHandleDistance = Double.MAX_VALUE;
@@ -654,7 +654,7 @@ public abstract class AbstractGraphic extends DefaultUUID implements Graphic {
 
     public List<Integer> getHandlePointIndexList(MouseEventDouble mouseEvent) {
         Map<Double, Integer> indexByDistanceMap = new TreeMap<>();
-        final Point2D mousePoint = Optional.ofNullable(mouseEvent).map(evt -> evt.getImageCoordinates()).orElse(null);
+        final Point2D mousePoint = Optional.ofNullable(mouseEvent).map(MouseEventDouble::getImageCoordinates).orElse(null);
 
         if (mousePoint != null && !pts.isEmpty() && !layer.getLocked()) {
             double maxHandleDistance =
@@ -743,13 +743,13 @@ public abstract class AbstractGraphic extends DefaultUUID implements Graphic {
 
     @Override
     public void setLabel(GraphicLabel label) {
-        GraphicLabel oldLabel = Optional.ofNullable(graphicLabel).map(gl -> gl.copy()).orElse(null);
+        GraphicLabel oldLabel = Optional.ofNullable(graphicLabel).map(GraphicLabel::copy).orElse(null);
         graphicLabel = label;
         fireLabelChanged(oldLabel);
     }
 
     public void setLabel(String[] labels, ViewCanvas<?> view2d, Point2D pos) {
-        GraphicLabel oldLabel = Optional.ofNullable(graphicLabel).map(gl -> gl.copy()).orElse(null);
+        GraphicLabel oldLabel = Optional.ofNullable(graphicLabel).map(GraphicLabel::copy).orElse(null);
 
         if (labels == null || labels.length == 0) {
             graphicLabel = null;
@@ -811,7 +811,7 @@ public abstract class AbstractGraphic extends DefaultUUID implements Graphic {
                             }
                             sb.append(" : "); //$NON-NLS-1$
                             if (value instanceof Number) {
-                                sb.append(DecFormater.oneDecimal((Number) value));
+                                sb.append(DecFormater.allNumber((Number) value));
                                 if (unit != null) {
                                     sb.append(" ").append(unit); //$NON-NLS-1$
                                 }
@@ -835,7 +835,7 @@ public abstract class AbstractGraphic extends DefaultUUID implements Graphic {
         setLabel(labels, view2d, pos);
 
         // update MeasureTool on the fly without calling again getMeasurements
-        if (!isMultiSelection && view2d != null) {
+        if (selectedGraphics.size() == 1 && this.equals(selectedGraphics.get(0)) && view2d != null) {
             for (GraphicSelectionListener gfxListener : view2d.getGraphicManager().getGraphicSelectionListeners()) {
                 gfxListener.updateMeasuredItems(measList);
             }

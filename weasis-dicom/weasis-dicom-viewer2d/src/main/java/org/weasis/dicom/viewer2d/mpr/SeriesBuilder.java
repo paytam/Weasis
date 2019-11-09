@@ -29,13 +29,10 @@ import javax.vecmath.Vector3d;
 
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
-import org.dcm4che3.data.UID;
 import org.dcm4che3.data.VR;
 import org.dcm4che3.util.UIDUtils;
 import org.opencv.core.Core;
 import org.opencv.imgproc.Imgproc;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.weasis.core.api.explorer.ObservableEvent;
 import org.weasis.core.api.explorer.model.DataExplorerModel;
 import org.weasis.core.api.explorer.model.TreeModel;
@@ -65,7 +62,6 @@ import org.weasis.opencv.data.PlanarImage;
 import org.weasis.opencv.op.ImageProcessor;
 
 public class SeriesBuilder {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SeriesBuilder.class);
 
     static TagW SeriesReferences = new TagW("series.builder.refs", TagType.STRING, 2, 2); //$NON-NLS-1$
     public static final File MPR_CACHE_DIR =
@@ -234,7 +230,7 @@ public class SeriesBuilder {
                             // Get the image in the middle of the series for having better default W/L values
                             img = series.getMedia(MediaSeries.MEDIA_POSITION.MIDDLE, filter,
                                 SortSeriesStack.slicePosition);
-                            final Attributes attributes = ((DcmMediaReader) img.getMediaReader()).getDicomObject();
+                            final Attributes attributes = img.getMediaReader().getDicomObject();
 
                             for (int i = 0; i < 2; i++) {
                                 if (needBuild[i]) {
@@ -267,8 +263,7 @@ public class SeriesBuilder {
                                             img, viewParams, origPixSize, sPixSize, geometry, mprView, attributes);
 
                                     if (dicomSeries != null && dicomSeries.size(null) > 0) {
-                                        ((DcmMediaReader) dicomSeries.getMedia(0, null, null).getMediaReader())
-                                            .writeMetaData(dicomSeries);
+                                        dicomSeries.getMedia(0, null, null).getMediaReader().writeMetaData(dicomSeries);
                                         if (study != null && treeModel != null) {
                                             dicomSeries.setTag(TagW.ExplorerModel, model);
                                             treeModel.addHierarchyNode(study, dicomSeries);
@@ -345,7 +340,7 @@ public class SeriesBuilder {
         Arrays.sort(COPIED_ATTRS);
         final Attributes cpTags = new Attributes(attributes, COPIED_ATTRS);
         cpTags.setString(Tag.SeriesDescription, VR.LO, attributes.getString(Tag.SeriesDescription, "") + " [MPR]"); //$NON-NLS-1$ //$NON-NLS-2$
-        cpTags.setString(Tag.ImageType, VR.CS, new String[] { "DERIVED", "SECONDARY", "MPR" }); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+        cpTags.setString(Tag.ImageType, VR.CS, "DERIVED", "SECONDARY", "MPR"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
         cpTags.setString(Tag.FrameOfReferenceUID, VR.UI, params.frameOfReferenceUID);
 
         int last = newSeries.length;
@@ -359,7 +354,7 @@ public class SeriesBuilder {
                     FileUtil.delete(newSeries[i].getFile());
                     throw e;
                 }
-                
+
                 if (bar != null) {
                     GuiExecutor.instance().execute(() -> {
                         bar.setValue(bar.getValue() + 1);
@@ -371,7 +366,6 @@ public class SeriesBuilder {
             rawIO.setBaseAttributes(cpTags);
 
             // Tags with same values for all the Series
-            rawIO.setTag(TagD.get(Tag.TransferSyntaxUID), UID.ImplicitVRLittleEndian);
             rawIO.setTag(TagD.get(Tag.Columns), dim.width);
             rawIO.setTag(TagD.get(Tag.Rows), dim.height);
             rawIO.setTag(TagD.get(Tag.SliceThickness), origPixSize);
@@ -445,7 +439,7 @@ public class SeriesBuilder {
         Iterable<DicomImageElement> medias, ViewParameter params, final MprView view, Thread thread,
         final boolean[] abort, String seriesID, int dstHeight) throws IOException {
         ImageCV[] builImgs = new ImageCV[newSeries.length];
-        
+
         // TODO should return the more frequent space!
         final JProgressBar bar = view.getProgressBar();
         try {
@@ -483,7 +477,7 @@ public class SeriesBuilder {
                         });
                     }
                 }
-                
+
                 // TODO do not open more than 512 files (Limitation to open 1024 in the same time on Ubuntu)
                 PlanarImage image = dcm.getImage(null, false);
                 if (image == null) {
@@ -493,19 +487,20 @@ public class SeriesBuilder {
                 if (MathUtil.isDifferent(dcm.getRescaleX(), dcm.getRescaleY())) {
                     Dimension dim = new Dimension((int) (Math.abs(dcm.getRescaleX()) * image.width()),
                         (int) (Math.abs(dcm.getRescaleY()) * image.height()));
-                    image = ImageProcessor.scale(image.toImageCV(), dim, Imgproc.INTER_LINEAR);
+                    try (ImageCV rimg = ImageProcessor.scale(image.toImageCV(), dim, Imgproc.INTER_LINEAR)) {
+                        writeRasterInRaw(rimg, newSeries, builImgs, params, dstHeight, index);
+                    }
+                } else {
+                    writeRasterInRaw(image, newSeries, builImgs, params, dstHeight, index);
                 }
-
-                writeRasterInRaw(image, newSeries, builImgs, params, dstHeight, index);
             }
-            
 
             return lastSpace;
         } finally {
             for (int i = 0; i < newSeries.length; i++) {
                 if (newSeries[i] != null) {
                     if (abort[0]) {
-                        newSeries[i].getFile().delete();
+                        FileUtil.delete(newSeries[i].getFile());
                     } else {
                         newSeries[i].write(builImgs[i]);
                     }
@@ -519,7 +514,6 @@ public class SeriesBuilder {
         ViewParameter params, int dstHeight, int imgIndex) throws IOException {
         ImageCV img = ImageProcessor.getRotatedImage(image.toMat(), params.rotateCvType);
         if (newSeries != null && img != null && img.height() == newSeries.length) {
-
             if (newSeries[0] == null) {
                 File dir = new File(MPR_CACHE_DIR, params.seriesUID);
                 dir.mkdirs();
@@ -532,10 +526,12 @@ public class SeriesBuilder {
             for (int j = 0; j < newSeries.length; j++) {
                 img.row(j).copyTo(builImgs[j].row(imgIndex - 1));
             }
+            if(!img.equals(image)) {
+                img.release();
+            }
         }
-
     }
-    
+
     private static void rotate(Vector3d vSrc, Vector3d axis, double angle, Vector3d vDst) {
         axis.normalize();
         vDst.x = axis.x * (axis.x * vSrc.x + axis.y * vSrc.y + axis.z * vSrc.z) * (1 - Math.cos(angle))

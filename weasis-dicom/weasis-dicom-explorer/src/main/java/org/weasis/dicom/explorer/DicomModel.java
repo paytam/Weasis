@@ -634,34 +634,34 @@ public class DicomModel implements TreeModel, DataExplorerModel {
     }
 
     public void openrelatedSeries(KOSpecialElement koSpecialElement, MediaSeriesGroup patient) {
-        if (koSpecialElement != null && patient != null) {
-            // SeriesViewerFactory plugin = UIManager.getViewerFactory(DicomMediaIO.SERIES_MIMETYPE);
-            // if (plugin != null && !(plugin instanceof MimeSystemAppFactory)) {
-            // Set<String> koSet = koSpecialElement.getReferencedSeriesInstanceUIDSet();
-            // List<MediaSeries<MediaElement>> seriesList = new ArrayList<>();
-            //
-            // for (MediaSeriesGroup st : this.getChildren(patient)) {
-            // for (MediaSeriesGroup s : this.getChildren(st)) {
-            // if (koSet.contains(TagD.getTagValue(s, Tag.SeriesInstanceUID))) {
-            // seriesList.add((MediaSeries<MediaElement>) s);
-            // }
-            // }
-            // }
-            // if (!seriesList.isEmpty()) {
-            // String uid = UUID.randomUUID().toString();
-            // Map<String, Object> props = Collections.synchronizedMap(new HashMap<String, Object>());
-            // props.put(ViewerPluginBuilder.CMP_ENTRY_BUILD_NEW_VIEWER, false);
-            // props.put(ViewerPluginBuilder.BEST_DEF_LAYOUT, false);
-            // props.put(ViewerPluginBuilder.ICON,
-            // new ImageIcon(getClass().getResource("/icon/16x16/key-images.png"))); //$NON-NLS-1$
-            // props.put(ViewerPluginBuilder.UID, uid);
-            // ViewerPluginBuilder builder = new ViewerPluginBuilder(plugin, seriesList, this, props);
-            // ViewerPluginBuilder.openSequenceInPlugin(builder);
-            // this.firePropertyChange(
-            // new ObservableEvent(ObservableEvent.BasicAction.SELECT, uid, null, koSpecialElement));
-            // }
-            // }
-        }
+//        if (koSpecialElement != null && patient != null) {
+//            SeriesViewerFactory plugin = UIManager.getViewerFactory(DicomMediaIO.SERIES_MIMETYPE);
+//            if (plugin != null && !(plugin instanceof MimeSystemAppFactory)) {
+//                Set<String> koSet = koSpecialElement.getReferencedSeriesInstanceUIDSet();
+//                List<MediaSeries<MediaElement>> seriesList = new ArrayList<>();
+//
+//                for (MediaSeriesGroup st : this.getChildren(patient)) {
+//                    for (MediaSeriesGroup s : this.getChildren(st)) {
+//                        if (koSet.contains(TagD.getTagValue(s, Tag.SeriesInstanceUID))) {
+//                            seriesList.add((MediaSeries<MediaElement>) s);
+//                        }
+//                    }
+//                }
+//                if (!seriesList.isEmpty()) {
+//                    String uid = UUID.randomUUID().toString();
+//                    Map<String, Object> props = Collections.synchronizedMap(new HashMap<String, Object>());
+//                    props.put(ViewerPluginBuilder.CMP_ENTRY_BUILD_NEW_VIEWER, false);
+//                    props.put(ViewerPluginBuilder.BEST_DEF_LAYOUT, false);
+//                    props.put(ViewerPluginBuilder.ICON,
+//                        new ImageIcon(getClass().getResource("/icon/16x16/key-images.png"))); //$NON-NLS-1$
+//                    props.put(ViewerPluginBuilder.UID, uid);
+//                    ViewerPluginBuilder builder = new ViewerPluginBuilder(plugin, seriesList, this, props);
+//                    ViewerPluginBuilder.openSequenceInPlugin(builder);
+//                    this.firePropertyChange(
+//                        new ObservableEvent(ObservableEvent.BasicAction.SELECT, uid, null, koSpecialElement));
+//                }
+//            }
+//        }
     }
 
     private void splitSeries(DicomMediaIO dicomReader, Series original, MediaElement media) {
