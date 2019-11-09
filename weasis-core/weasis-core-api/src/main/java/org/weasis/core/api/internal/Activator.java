@@ -30,7 +30,6 @@ import org.weasis.core.api.gui.util.AppProperties;
 import org.weasis.core.api.media.data.Codec;
 import org.weasis.core.api.service.AuditLog;
 import org.weasis.core.api.service.BundleTools;
-import org.weasis.core.api.util.LangUtil;
 
 public class Activator implements BundleActivator, ServiceListener {
     private static final Logger LOGGER = LoggerFactory.getLogger(Activator.class);
@@ -44,11 +43,6 @@ public class Activator implements BundleActivator, ServiceListener {
         }
 
         bundleContext.addServiceListener(this, String.format("(%s=%s)", Constants.OBJECTCLASS, Codec.class.getName()));//$NON-NLS-1$
-
-        // Allows to connect through a proxy initialized by Java Webstart
-        if (!LangUtil.geEmptytoTrue(System.getProperty("http.bundle.cache"))) { //$NON-NLS-1$
-            ProxyUtils.setProxyFromJavaWebStart();
-        }
 
         initLoggerAndAudit(bundleContext);
     }

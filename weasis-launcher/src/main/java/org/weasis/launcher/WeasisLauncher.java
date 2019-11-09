@@ -23,12 +23,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.URI;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -77,7 +75,7 @@ public class WeasisLauncher {
     private static final Logger LOGGER = Logger.getLogger(WeasisLauncher.class.getName());
 
     public enum Type {
-        DEFAULT, NATIVE, JWS
+        DEFAULT, NATIVE
     }
 
     public enum State {
@@ -197,13 +195,6 @@ public class WeasisLauncher {
         // Load local properties and clean if necessary the previous version
         WeasisLoader loader = loadProperties(serverProp, configData.getConfigOutput());
         WeasisMainFrame mainFrame = loader.getMainFrame();
-
-        // If enabled, register a shutdown hook to make sure the framework is
-        // cleanly shutdown when the VM exits
-        if (Type.JWS == type) {
-            handleWebstartHookBug();
-            System.setProperty("http.bundle.cache", Boolean.FALSE.toString()); //$NON-NLS-1$
-        }
 
         Runtime.getRuntime().addShutdownHook(new Thread(this::shutdownHook));
         registerAdditionalShutdownHook();
@@ -1114,32 +1105,6 @@ public class WeasisLauncher {
             jvmVersionString = jvmVersionString.substring(verIndex + 2);
         }
         return Integer.parseInt(jvmVersionString);
-    }
-
-    /**
-     * @see https://bugs.openjdk.java.net/browse/JDK-8054639
-     *
-     */
-    private static void handleWebstartHookBug() {
-        if (getJavaMajorVersion() < 9) {
-            // there is a bug that arrived sometime around the mid java7 releases. shutdown hooks get created that
-            // shutdown loggers and close down the classloader jars that means that anything we try to do in our
-            // shutdown hook throws an exception, but only after some random amount of time
-            try {
-                Class<?> clazz = Class.forName("java.lang.ApplicationShutdownHooks"); //$NON-NLS-1$
-                Field field = clazz.getDeclaredField("hooks"); //$NON-NLS-1$
-                field.setAccessible(true);
-                Map<?, Thread> hooks = (Map<?, Thread>) field.get(clazz);
-                for (Iterator<Thread> it = hooks.values().iterator(); it.hasNext();) {
-                    Thread thread = it.next();
-                    if ("javawsSecurityThreadGroup".equals(thread.getThreadGroup().getName())) { //$NON-NLS-1$
-                        it.remove();
-                    }
-                }
-            } catch (Exception e) {
-                LOGGER.log(Level.SEVERE, "JWS shutdownHook", e); //$NON-NLS-1$
-            }
-        }
     }
 
     private void shutdownHook() {
