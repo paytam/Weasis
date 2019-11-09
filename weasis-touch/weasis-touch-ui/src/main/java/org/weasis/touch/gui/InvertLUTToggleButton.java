@@ -41,6 +41,6 @@ public class InvertLUTToggleButton extends JFXToggleButton {
 
     @Override
     public String getUserAgentStylesheet() {
-        return JFXToggleButton.class.getResource("/css/controls/jfx-toggle-button.css").toExternalForm();
+        return JFXToggleButton.class.getResource("/com/jfoenix/assets/css/controls/jfx-toggle-button.css").toExternalForm();
     }
 }

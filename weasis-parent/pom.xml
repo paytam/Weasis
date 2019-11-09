@@ -10,8 +10,8 @@
 	<name>${project.artifactId}</name>
 
 	<properties>
-		<java-version>13</java-version>
-		<jdk-version>13</jdk-version>
+		<java-version>11</java-version>
+		<jdk-version>11</jdk-version>
 		<enforcer.jdk-version>[${jdk-version},)</enforcer.jdk-version>
 		<enforcer.maven-version>[3.5.0,)</enforcer.maven-version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -38,8 +38,8 @@
 
 		<slf4j.version>1.7.25</slf4j.version>
 		<sling.commons.log.version>3.0.2-r5</sling.commons.log.version>
-		<controlsfx.version>8.40.14</controlsfx.version>
-		<jfoenix.version>8.0.2</jfoenix.version>
+		<controlsfx.version>11.0.0</controlsfx.version>
+		<jfoenix.version>9.0.9</jfoenix.version>
 		<weasis.opencv.native.version>4.1.1-dcm</weasis.opencv.native.version>
 		<javax.json.version>1.1.5</javax.json.version>
 		<jaxb.osgi.version>2.3.2</jaxb.osgi.version>
@@ -119,9 +119,8 @@
 							<Bundle-SymbolicName>${bundle.symbolicName}</Bundle-SymbolicName>
 							<Bundle-Version>${project.version}</Bundle-Version>
 							<Bundle-RequiredExecutionEnvironment>JavaSE-1.8</Bundle-RequiredExecutionEnvironment>
-							<!-- Using <_exportcontents> requires to configure <Export-Package>, 
-								there is no default export (All packages, except any containing 'impl' or 
-								'internal' -->
+							<!-- Using <_exportcontents> requires to configure <Export-Package>, there is no default export (All packages, except 
+								any containing 'impl' or 'internal' -->
 							<_removeheaders>
 								Bnd-LastModified,Include-Resource,Private-Package,Tool,Built-By,Created-By
 							</_removeheaders>
@@ -315,6 +314,32 @@
 				<artifactId>controlsfx</artifactId>
 				<version>${controlsfx.version}</version>
 				<scope>provided</scope>
+				<exclusions>
+					<exclusion>
+						<groupId>org.openjfx</groupId>
+						<artifactId>javafx-base</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>org.openjfx</groupId>
+						<artifactId>javafx-graphics</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>org.openjfx</groupId>
+						<artifactId>javafx-controls</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>org.openjfx</groupId>
+						<artifactId>javafx-media</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>org.openjfx</groupId>
+						<artifactId>javafx-web</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>junit</groupId>
+						<artifactId>junit</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>com.jfoenix</groupId>
@@ -323,8 +348,7 @@
 				<scope>provided</scope>
 			</dependency>
 
-			<!--The following dependencies are not required for compilation (required 
-				when loading the OSGI framework for debugging) -->
+			<!--The following dependencies are not required for compilation (required when loading the OSGI framework for debugging) -->
 			<dependency>
 				<groupId>org.apache.sling</groupId>
 				<artifactId>org.apache.sling.commons.log</artifactId>

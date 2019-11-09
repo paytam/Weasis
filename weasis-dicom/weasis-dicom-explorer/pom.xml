@@ -29,7 +29,6 @@
 					<instructions>
 						<!-- Force to import jaxb binding classes (supports jaxb inside or outside jdk) -->
 						<Import-Package>javax.xml.bind;version=!,*</Import-Package>
-						<Bundle-Activator>${bundle.namespace}.internal.Activator</Bundle-Activator>
 					</instructions>
 				</configuration>
 			</plugin>

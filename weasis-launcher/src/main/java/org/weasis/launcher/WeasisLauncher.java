@@ -23,6 +23,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.URI;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -42,7 +43,9 @@ import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
 import org.osgi.util.tracker.ServiceTracker;
 
+import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.stage.Stage;
 
 public class WeasisLauncher {
 
@@ -191,6 +194,9 @@ public class WeasisLauncher {
             // Initialize the framework, but don't start it yet.
             mFelix.init();
 
+            Hashtable<String, Stage> props = new Hashtable<>();
+            props.put("splashScreen", weasisApp.getSplashStage());
+            mFelix.getBundleContext().registerService(Application.class, weasisApp, props);
             // Use the system bundle context to process the auto-deploy
             // and auto-install/auto-start properties.
             loader.setFelix(serverProp, mFelix.getBundleContext(), modulesi18n);
