@@ -5,7 +5,7 @@
 	<!-- Shared parent. Define the settings common to all projects using Weasis -->
 	<groupId>org.weasis</groupId>
 	<artifactId>weasis-parent</artifactId>
-	<version>3.5.5-SNAPSHOT</version>
+	<version>3.6.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>${project.artifactId}</name>
 
@@ -21,6 +21,7 @@
 		<app.version>${project.version}</app.version>
 		<felix.framework.version>6.0.3</felix.framework.version>
 		<substance.version>1.9.1</substance.version>
+		<xz.version>1.8</xz.version>
 
 		<osgi.cmpn.version>7.0.0</osgi.cmpn.version>
 
