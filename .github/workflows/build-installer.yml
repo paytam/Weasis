@@ -7,7 +7,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
+        os: [ windows-latest]
+        platform: [x32, x64]
     steps:
     - uses: actions/checkout@v2
     - name: Set up JDK 16-ea
@@ -15,9 +16,11 @@ jobs:
       with:
         java-version: 16.0.0-ea.13
 
-    - name: Build with Maven
-      run: mvn clean install
+   # - name: Build with Maven
+   #   run: mvn clean install
       
     - name: Retrieve version
       run: |
         echo ::set-env name=WEASIS_VERSION::$(awk -F'[<>]' '/<revision>/{print $3}' weasis-parent/pom.xml)$(awk -F'[<>]' '/<changelist>/{print $3}' weasis-parent/pom.xml)
+        uname -m
+        uname -s
