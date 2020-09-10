@@ -26,7 +26,9 @@ jobs:
     - name: Retrieve version
       run: |
         echo ::set-env name=WEASIS_VERSION::$(awk -F'[<>]' '/<revision>/{print $3}' weasis-parent/pom.xml)$(awk -F'[<>]' '/<changelist>/{print $3}' weasis-parent/pom.xml)
-        echo ::set-env name=WEASIS_CLEAN_VERSION::$(echo ${{ WEASIS_VERSION }} | sed -e 's/"//g' -e 's/-.*//')
+        echo ::set-env name=WEASIS_CLEAN_VERSION::$(echo ${{ env.WEASIS_VERSION }} | sed -e 's/"//g' -e 's/-.*//')
+        echo ${{ env.WEASIS_VERSION }}
+        echo ${{ env.WEASIS_CLEAN_VERSION }}
       shell: bash
 
     - name: Required variables
