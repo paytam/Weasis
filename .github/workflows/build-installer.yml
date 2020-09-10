@@ -26,17 +26,17 @@ jobs:
     - name: Retrieve version
       run: |
         echo ::set-env name=WEASIS_VERSION::$(awk -F'[<>]' '/<revision>/{print $3}' weasis-parent/pom.xml)$(awk -F'[<>]' '/<changelist>/{print $3}' weasis-parent/pom.xml)
-        echo ::set-env name=WEASIS_CLEAN_VERSION::$(echo ${{ env.WEASIS_VERSION }} | sed -e 's/"//g' -e 's/-.*//')
+        echo ::set-env name=WEASIS_CLEAN_VERSION::$(echo ${{ WEASIS_VERSION }} | sed -e 's/"//g' -e 's/-.*//')
       shell: bash
 
     - name: Required variables
       run: |
         echo "${{ matrix.wsystem }}-${{ matrix.warc }}"
         if ["$RUNNER_OS" == "Linux"]; then
-          echo "${{ matrix.include.wsystem }}-${{ matrix.include.warc }}"
+          echo ${{ matrix.wsystem }}-${{ matrix.warc }}
         elif ["$RUNNER_OS" == "Windows"]; then
-          echo "${{ matrix.include.wsystem }}-${{ matrix.include.warc }}"
+          echo ${{ matrix.wsystem }}-${{ matrix.warc }}
         elif ["$RUNNER_OS" == "MacOS"]; then
-          echo "${{ matrix.include.wsystem }}-${{ matrix.include.warc }}"
+          echo ${{ matrix.wsystem }}-${{ matrix.warc }}
         fi
       shell: bash
