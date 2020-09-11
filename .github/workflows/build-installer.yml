@@ -60,12 +60,12 @@ jobs:
       shell: bash
       run: |
         # Remove pack jar for launcher
-        rm -f "$WEASIS_INPUT_BIN"/*.jar.pack.gz
+        rm -f ${{ WEASIS_INPUT_BIN }}/*.jar.pack.gz
         # Remove the unrelated native packages
-        find "$WEASIS_INPUT_BIN"/bundle/weasis-opencv-core-* -type f ! -name '*weasis-opencv-core-${{ matrix.wsystem }}-${{ matrix.warc }}-*'  -exec rm -f {} \;
+        find ${{ WEASIS_INPUT_BIN }}/bundle/weasis-opencv-core-* -type f ! -name '*weasis-opencv-core-'${{ matrix.wsystem }}'-'${{ matrix.warc }}'-*'  -exec rm -f {} \;
         # Special case with 32-bit architecture, remove 64-bit lib
         if [ "${{ matrix.warc }}" = "x86" ] ; then
-          rm -f $WEASIS_INPUT_BIN"/bundle/weasis-opencv-core-${{ matrix.wsystem }}-x86-64-*
+          rm -f ${{ WEASIS_INPUT_BIN }}/bundle/weasis-opencv-core-${{ matrix.wsystem }}-x86-64-*
         fi
         echo "$(ls $WEASIS_INPUT_BIN/)"
         echo "$(ls $WEASIS_INPUT_BIN/bundle/)"
