@@ -72,10 +72,11 @@ jobs:
     - name: Replace substance by a more recent version for Java 11
       shell: bash
       run: |
+        machine=${{ matrix.wsystem }}
         if [ "$machine" = "windows" ] ; then
           choco install wget --no-progress 
         fi
-        wget -O "${{ env.WEASIS_INPUT }}/substance.jar"  https://raw.github.com/nroduit/mvn-repo/master/org/pushing-pixels/radiance-substance-all/{{ env.SUBSTANCE_PKG }}/radiance-substance-all-${{ env.SUBSTANCE_PKG }}.jar  
+        wget --no-check-certificate -O "${{ env.WEASIS_INPUT }}/substance.jar"  https://raw.github.com/nroduit/mvn-repo/master/org/pushing-pixels/radiance-substance-all/{{ env.SUBSTANCE_PKG }}/radiance-substance-all-${{ env.SUBSTANCE_PKG }}.jar  
         echo "$(ls -la ${{ env.WEASIS_INPUT }})"
         
     - name: Run jpackage
@@ -100,9 +101,9 @@ jobs:
     - name: Adapt launching options
       shell: bash
       env:
-        machine: ${{ matrix.wsystem }}
         RES: "weasis-distributions/script/resources/${{ matrix.wsystem }}"
       run: |
+        machine=${{ matrix.wsystem }}
         if [ "$machine" = "macosx" ] ; then
           OUT_APP="${{ env.WEASIS_OUTPUT_BIN }}/$NAME.app/Contents/app"
         elif [ "$machine" = "windows" ] ; then
