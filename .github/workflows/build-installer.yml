@@ -4,6 +4,16 @@ on:
 
 jobs:
   build:
+    env:
+      JDK_MODULES: "java.base,java.compiler,java.datatransfer,java.desktop,java.logging,java.management,java.prefs,java.xml,jdk.localedata,jdk.charsets,jdk.crypto.ec,jdk.crypto.cryptoki,jdk.unsupported,jdk.jdwp.agent"
+      NAME: "Weasis"
+      IDENTIFIER: "org.weasis.viewer"
+      JVM_ARGS: "-splash:$APPDIR/resources/images/about-round.png -Dgosh.port=17179"
+      WEASIS_INPUT: "weasis-distributions/target/portable-dist/weasis-portable"
+      WEASIS_OUTPUT: "weasis-distributions/target/native-dist"
+      WEASIS_INPUT_BIN: "weasis-distributions/target/portable-dist/weasis-portable/weasis"
+      WEASIS_OUTPUT_BIN: "weasis-distributions/target/native-dist/weasis"
+      SUBSTANCE_PKG: "3.0.0"  # Package for Java 11 (remove in weasis 4)
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -34,35 +44,140 @@ jobs:
         mvn clean install -Dportable=true -P compressXZ -f weasis-distributions
       
     - name: Retrieve version
-      run: echo ::set-env name=WEASIS_VERSION::$(awk -F'[<>]' '/<revision>/{print $3}' weasis-parent/pom.xml)$(awk -F'[<>]' '/<changelist>/{print $3}' weasis-parent/pom.xml)
       shell: bash
+      run: echo ::set-env name=WEASIS_VERSION::$(awk -F'[<>]' '/<revision>/{print $3}' weasis-parent/pom.xml)$(awk -F'[<>]' '/<changelist>/{print $3}' weasis-parent/pom.xml)
 
     - name: Set compatible version
-      run: echo ::set-env name=WEASIS_CLEAN_VERSION::$(echo $WEASIS_VERSION | sed -e 's/"//g' -e 's/-.*//')
       shell: bash
+      run: echo ::set-env name=WEASIS_CLEAN_VERSION::$(echo $WEASIS_VERSION | sed -e 's/"//g' -e 's/-.*//')
 
     - name: Unip portable version
+      shell: bash
       run: |
-        unzip -o "weasis-distributions/target/portable-dist/weasis-portable.zip" -d "weasis-distributions/target/portable-dist/weasis-portable"
-        echo ::set-env name=WEASIS_INPUT::"weasis-distributions/target/portable-dist/weasis-portable"
+        unzip -o "weasis-distributions/target/portable-dist/weasis-portable.zip" -d "$WEASIS_INPUT"
+
+    - name: Remove binaries not releated to the current architecture
+      shell: bash
+      run: |
+        # Remove pack jar for launcher
+        rm -f "$WEASIS_INPUT_BIN"/*.jar.pack.gz
+        # Remove the unrelated native packages
+        find "$WEASIS_INPUT_BIN"/bundle/*-${{ matrix.wsystem }}-* -type f ! -name '*-'${{ matrix.warc }}'-*'  -exec rm -f {} \;
+        # Special case with 32-bit architecture, remove 64-bit lib
+        if [ "${{ matrix.warc }}" = "x86" ] ; then
+          find "$WEASIS_INPUT_BIN"/bundle/*-x86* -type f -name '*-${{ matrix.wsystem }}-x86-64-*'  -exec rm -f {} \;
+        fi
+        echo "$(ls $WEASIS_INPUT_BIN/bundle/)"
+
+    - name: Replace substance by a more recent version for Java 11
+      shell: bash
+      run: |
+        mvn dependency:get -Dartifact=org.pushing-pixels:radiance-substance-all:$SUBSTANCE_PKG -DremoteRepositories=https://raw.github.com/nroduit/mvn-repo/master/
+        MVN_REPO=$(mvn help:evaluate -Dexpression=settings.localRepository | grep -v '\[INFO\]')
+        SUBSTANCE_FILE="${MVN_REPO//[$'\t\r\n']}/org/pushing-pixels/radiance-substance-all/$SUBSTANCE_PKG/radiance-substance-all-$SUBSTANCE_PKG.jar"
+        if [[ -r "$SUBSTANCE_FILE" ]] ; then
+          cp -fv "${SUBSTANCE_FILE}" "${WEASIS_INPUT}/substance.jar"
+        else
+          echo "Warning: cannot copy Substance file: ${SUBSTANCE_FILE}"
+        fi
+        
+    - name: Run jpackage
+      shell: bash
+      env:
+        RES: "weasis-distributions/script/resources/${{ matrix.wsystem }}"
+      run: |
+        jpackage --type app-image --input "$WEASIS_INPUT_BIN" --dest "$WEASIS_OUTPUT" --name "$NAME" \
+        --main-jar weasis-launcher.jar --main-class org.weasis.launcher.AppLauncher --add-modules "$JDK_MODULES" \
+        --resource-dir "$RES" --java-options "$JVM_ARGS" --app-version "$WEASIS_VERSION" --verbose
+         
+        # Build exe for debugging in the console and copy them into the debug folder
+        if [ "${{ matrix.wsystem }}" == "windows" ] ; then
+          jpackage --type app-image --input "$WEASIS_INPUT_BIN" --dest "$WEASIS_OUTPUT-debug" --name "$NAME" \
+          --main-jar weasis-launcher.jar --main-class org.weasis.launcher.AppLauncher --add-modules "$JDK_MODULES" \
+          --resource-dir "$RES" --java-options "$JVM_ARGS" --app-version "$WEASIS_VERSION" --win-console --verbose
+          mkdir "$WEASIS_INPUT_BIN/debug"
+          cp "$EASIS_OUTPUT-debug/$NAME/$NAME.exe"  "$WEASIS_OUTPUT_BIN/debug/$NAME.exe"
+        fi
+
+    - name: Adapt launching options
+      shell: bash
+      env:
+        machine: ${{ matrix.wsystem }}
+        RES: "weasis-distributions/script/resources/${{ matrix.wsystem }}"
+      run: |
+        if [ "$machine" = "macosx" ] ; then
+          OUT_APP="$WEASIS_OUTPUT_BIN/$NAME.app/Contents/app"
+        elif [ "$machine" = "windows" ] ; then
+          OUT_APP="$WEASIS_OUTPUT_BIN/$NAME/app"         
+        else
+          OUT_APP="$WEASIS_OUTPUT_BIN/$NAME/lib/app"
+        fi
+
+        match="\[JavaOptions\]"
+        insertOptions='\
+        #java-options=-Daudit.log=true\
+        #java-options=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8789\
+        java-options=--illegal-access=warn\
+        java-options=--add-exports=java.base\/sun.net.www.protocol.http=ALL-UNNAMED\
+        java-options=--add-exports=java.base\/sun.net.www.protocol.file=ALL-UNNAMED\
+        java-options=--add-exports=java.base\/sun.net.www.protocol.https=ALL-UNNAMED\
+        java-options=--add-exports=java.base\/sun.net.www.protocol.file=ALL-UNNAMED\
+        java-options=--add-exports=java.base\/sun.net.www.protocol.ftp=ALL-UNNAMED\
+        java-options=--add-exports=java.base\/sun.net.www.protocol.jar=ALL-UNNAMED\
+        java-options=--add-exports=jdk.unsupported\/sun.misc=ALL-UNNAMED\
+        java-options=--add-opens=java.base\/java.net=ALL-UNNAMED\
+        java-options=--add-opens=java.base\/java.lang=ALL-UNNAMED\
+        java-options=--add-opens=java.base\/java.security=ALL-UNNAMED\
+        java-options=--add-opens=java.base\/java.io=ALL-UNNAMED\
+        java-options=--add-opens=java.desktop\/javax.imageio.stream=ALL-UNNAMED\
+        java-options=--add-opens=java.desktop\/javax.imageio=ALL-UNNAMED\
+        java-options=--add-opens=java.desktop\/com.sun.awt=ALL-UNNAMED'
+        sed -i.bck "s/$match/$match$insertOptions/" "$OUT_APP/$NAME.cfg"
+        sed -i.bck '/^java-options=--module-path/d' "$OUT_APP/$NAME.cfg"
+        sed -i.bck '/mods\r\{0,1\}/d' "$OUT_APP/$NAME.cfg"
+        rm -f "$OUT_APP/$NAME.cfg.bck"
+
+        if [ "$machine" = "linux" ] ; then
+          cp "$RES/Dicomizer.desktop" "$WEASIS_OUTPUT_BIN/$NAME/lib/weasis-Dicomizer.desktop"
+        elif [ "$machine" = "windows" ] ; then
+          # Fix icon of second launcher
+          cp "$RES/Dicomizer.ico" "$WEASIS_OUTPUT_BIN/$NAME/Dicomizer.ico"
+        elif [ "$machine" = "macosx" ] ; then
+          cp -Rf "$RES/weasis-uri-handler.app" "$WEASIS_OUTPUT_BIN/$NAME.app/Contents/MacOS/"
+          cp -Rf "$RES/Dicomizer.app" "$WEASIS_OUTPUT_BIN/$NAME.app/Contents/MacOS/"
+        fi
+
 
     - name: Required variables
-      run: |
-        echo $GITHUB_WORKSPACE
-        echo "${{ matrix.wsystem }}-${{ matrix.warc }}"
-        if [ "$RUNNER_OS" == "Linux" ]; then
-          echo "${{ matrix.wsystem }}-${{ matrix.warc }}"
-        elif [ "$RUNNER_OS" == "Windows" ]; then
-          echo "${{ matrix.wsystem }}-${{ matrix.warc }}"
-        elif [ "$RUNNER_OS" == "macOS" ]; then
-          echo "${{ matrix.wsystem }}-${{ matrix.warc }}"
-        else
-              echo "$RUNNER_OS not supported"
-              exit 1
-        fi
-      env:
-        JDK_MODULES: "java.base,java.compiler,java.datatransfer,java.desktop,java.logging,java.management,java.prefs,java.xml,jdk.localedata,jdk.charsets,jdk.crypto.ec,jdk.crypto.cryptoki,jdk.unsupported,jdk.jdwp.agent"
-        NAME: "Weasis"
-        IDENTIFIER: "org.weasis.viewer"
-        JVM_ARGS: "-splash:$APPDIR/resources/images/about-round.png -Dgosh.port=17179"
       shell: bash
+      env:
+        RES: "weasis-distributions/script/resources/${{ matrix.wsystem }}"
+        FILE_ASSOC: "weasis-distributions/script/file-associations.properties"
+        VENDOR: "Weasis Team"
+        COPYRIGHT: "© 2009-2020 Weasis Team"
+      run: |
+        machine=${{ matrix.wsystem }}
+        ARC_NAME=${{ matrix.warc }}
+        if [ "$machine" = "windows" ] ; then
+          [ "$ARC_NAME" = "x86" ] && UPGRADE_UID="3aedc24e-48a8-4623-ab39-0c3c01c7383b" || UPGRADE_UID="3aedc24e-48a8-4623-ab39-0c3c01c7383a"
+          jpackage --type "msi" --app-image "$WEASIS_INPUT_BIN" --dest "$EASIS_OUTPUT" --name "$NAME" --resource-dir "$RES/msi/$ARC_NAME" \
+          --license-file "weasis-distributions/script/Licence.txt" --description "Weasis DICOM viewer" \
+          --win-menu --win-menu-group "$NAME" --win-upgrade-uuid "$UPGRADE_UID" \
+          --copyright "$COPYRIGHT" --app-version "$WEASIS_CLEAN_VERSION" \
+          --vendor "$VENDOR" --file-associations "$FILE_ASSOC" --verbose
+          mv "$OUTPUT_PATH_UNIX/$NAME-$WEASIS_CLEAN_VERSION.msi" "$OUTPUT_PATH_UNIX/$NAME-$WEASIS_CLEAN_VERSION-$ARC_NAME.msi"
+        elif [ "$machine" = "linux" ] ; then
+          declare -a installerTypes=("deb" "rpm")
+          for installerType in ${installerTypes[@]}; do
+            jpackage --type "$installerType" --app-image "$WEASIS_INPUT_BIN" --dest "$EASIS_OUTPUT"  --name "$NAME" --resource-dir "$RES/$installerType" \
+            --license-file "weasis-distributions/script/Licence.txt" --description "Weasis DICOM viewer" --vendor "$VENDOR" \
+            --copyright "$COPYRIGHT" --app-version "$WEASIS_CLEAN_VERSION" --file-associations "$FILE_ASSOC" \
+            --linux-app-release "$REVISON_INC" --linux-package-name "weasis" --linux-deb-maintainer "Nicolas Roduit" --linux-rpm-license-type "EPL-2.0" \
+            --linux-menu-group "Viewer;MedicalSoftware;Graphics;" --linux-app-category "science" --linux-shortcut --verbose
+          done
+        elif [ "$machine" = "macosx" ] ; then
+          jpackage --type "pkg" --app-image "$WEASIS_INPUT_BIN.app" --dest "$EASIS_OUTPUT" --name "$NAME" --resource-dir "$RES" \
+          --license-file "weasis-distributions/script/Licence.txt" --copyright "$COPYRIGHT" --app-version "$WEASIS_CLEAN_VERSION" --mac-package-identifier "$IDENTIFIER" \
+          --mac-signing-key-user-name "$CERTIFICATE" --verbose "$MAC_SIGN"
+        fi
+        echo "$(ls $EASIS_OUTPUT)"
