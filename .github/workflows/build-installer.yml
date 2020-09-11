@@ -19,10 +19,10 @@ jobs:
       matrix:
         include:
       #  - { os: ubuntu-latest, name: GNU, cc: gcc, cxx: g++, platform: x32, wsystem: linux, warc: x86 }
-      #  - { os: ubuntu-latest, name: GNU, cc: gcc, cxx: g++, platform: x64, wsystem: linux, warc: x86_64 }
-      #  - { os: macos-latest, name: Clang, cc: clang, cxx: clang++, platform: x64, wsystem: macosx, warc: x86_64 }
+      #  - { os: ubuntu-latest, name: GNU, cc: gcc, cxx: g++, platform: x64, wsystem: linux, warc: x86-64 }
+      #  - { os: macos-latest, name: Clang, cc: clang, cxx: clang++, platform: x64, wsystem: macosx, warc: x86-64 }
       #  - { os: windows-latest, name: VS2019, cc: cl, cxx: cl, platform: x32, wsystem: windows, warc: x86 }
-        - { os: windows-latest, name: VS2019, cc: cl, cxx: cl, platform: x64, wsystem: windows, warc: x86_64 }
+        - { os: windows-latest, name: VS2019, cc: cl, cxx: cl, platform: x64, wsystem: windows, warc: x86-64 }
     steps:
     - uses: actions/checkout@v2
     - name: Set up JDK 16-ea
@@ -76,7 +76,7 @@ jobs:
         if [ "$machine" = "windows" ] ; then
           choco install wget --no-progress 
         fi
-        wget --no-check-certificate -O "${{ env.WEASIS_INPUT }}/substance.jar"  https://raw.github.com/nroduit/mvn-repo/master/org/pushing-pixels/radiance-substance-all/{{ env.SUBSTANCE_PKG }}/radiance-substance-all-${{ env.SUBSTANCE_PKG }}.jar  
+        wget --no-check-certificate -O "${{ env.WEASIS_INPUT }}/substance.jar"  https://raw.github.com/nroduit/mvn-repo/master/org/pushing-pixels/radiance-substance-all/${{ env.SUBSTANCE_PKG }}/radiance-substance-all-${{ env.SUBSTANCE_PKG }}.jar  
         echo "$(ls -la ${{ env.WEASIS_INPUT }})"
         
     - name: Run jpackage
