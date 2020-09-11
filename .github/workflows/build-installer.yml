@@ -37,6 +37,14 @@ jobs:
         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
         restore-keys: |
           ${{ runner.os }}-maven-
+          
+    - name: Cache weasis-portable
+      uses: actions/cache@v2
+      with:
+        path: ${{ env.WEASIS_INPUT }}
+        key: ${{ runner.os }}-weasis-${{ hashFiles('**/*.xz') }}
+        restore-keys: |
+          ${{ runner.os }}-weasis-
 
     - name: Build with Maven
       run: |
@@ -51,7 +59,7 @@ jobs:
       shell: bash
       run: echo ::set-env name=WEASIS_CLEAN_VERSION::$(echo $WEASIS_VERSION | sed -e 's/"//g' -e 's/-.*//')
 
-    - name: Unip portable version
+    - name: Unzip portable version
       shell: bash
       run: |
         unzip -o "weasis-distributions/target/portable-dist/weasis-portable.zip" -d "$WEASIS_INPUT"
@@ -72,7 +80,7 @@ jobs:
     - name: Replace substance by a more recent version for Java 11
       shell: bash
       run: |
-        curl -o "${{ env.WEASIS_INPUT }}/substance.jar" https://raw.github.com/nroduit/mvn-repo/master/org/pushing-pixels/radiance-substance-all/${{ env.SUBSTANCE_PKG }}/radiance-substance-all-${{ env.SUBSTANCE_PKG }}.jar
+        curl -L -o "${{ env.WEASIS_INPUT }}/substance.jar" "https://raw.github.com/nroduit/mvn-repo/master/org/pushing-pixels/radiance-substance-all/${{ env.SUBSTANCE_PKG }}/radiance-substance-all-${{ env.SUBSTANCE_PKG }}.jar"
         echo "$(ls -la ${{ env.WEASIS_INPUT }})"
         
     - name: Run jpackage
@@ -92,7 +100,7 @@ jobs:
           mkdir "${{ env.WEASIS_OUTPUT_BIN }}/debug"
           cp "${{ env.WEASIS_OUTPUT }}-debug/$NAME/$NAME.exe" "${{ env.WEASIS_OUTPUT_BIN }}/debug/$NAME.exe"
         fi
-        echo "$(ls -la ${{ env.WEASIS_OUTPUT }})"
+        echo "$(ls -la ${{ env.WEASIS_OUTPUT_BIN }})"
 
     - name: Adapt launching options
       shell: bash
@@ -101,11 +109,11 @@ jobs:
       run: |
         machine=${{ matrix.wsystem }}
         if [ "$machine" = "macosx" ] ; then
-          OUT_APP="${{ env.WEASIS_OUTPUT_BIN }}/$NAME.app/Contents/app"
+          OUT_APP="${{ env.WEASIS_OUTPUT }}/$NAME.app/Contents/app"
         elif [ "$machine" = "windows" ] ; then
-          OUT_APP="${{ env.WEASIS_OUTPUT_BIN }}/$NAME/app"         
+          OUT_APP="${{ env.WEASIS_OUTPUT_BIN }}/app"         
         else
-          OUT_APP="${{ env.WEASIS_OUTPUT_BIN }}/$NAME/lib/app"
+          OUT_APP="${{ env.WEASIS_OUTPUT_BIN }}/lib/app"
         fi
 
         match="\[JavaOptions\]"
@@ -133,13 +141,13 @@ jobs:
         rm -f "$OUT_APP/$NAME.cfg.bck"
 
         if [ "$machine" = "linux" ] ; then
-          cp "$RES/Dicomizer.desktop" "${{ env.WEASIS_OUTPUT_BIN }}/$NAME/lib/weasis-Dicomizer.desktop"
+          cp "$RES/Dicomizer.desktop" "${{ env.WEASIS_OUTPUT_BIN }}/lib/weasis-Dicomizer.desktop"
         elif [ "$machine" = "windows" ] ; then
           # Fix icon of second launcher
-          cp "$RES/Dicomizer.ico" "${{ env.WEASIS_OUTPUT_BIN }}/$NAME/Dicomizer.ico"
+          cp "$RES/Dicomizer.ico" "${{ env.WEASIS_OUTPUT_BIN }}/Dicomizer.ico"
         elif [ "$machine" = "macosx" ] ; then
-          cp -Rf "$RES/weasis-uri-handler.app" "${{ env.WEASIS_OUTPUT_BIN }}/$NAME.app/Contents/MacOS/"
-          cp -Rf "$RES/Dicomizer.app" "${{ env.WEASIS_OUTPUT_BIN }}/$NAME.app/Contents/MacOS/"
+          cp -Rf "$RES/weasis-uri-handler.app" "${{ env.WEASIS_OUTPUT }}/$NAME.app/Contents/MacOS/"
+          cp -Rf "$RES/Dicomizer.app" "${{ env.WEASIS_OUTPUT }}/$NAME.app/Contents/MacOS/"
         fi
 
     - name: Required variables
