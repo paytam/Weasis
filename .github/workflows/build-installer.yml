@@ -72,11 +72,13 @@ jobs:
     - name: Replace substance by a more recent version for Java 11
       shell: bash
       run: |
+        command="--no-check-certificate -O "${{ env.WEASIS_INPUT }}/substance.jar"  https://raw.github.com/nroduit/mvn-repo/master/org/pushing-pixels/radiance-substance-all/${{ env.SUBSTANCE_PKG }}/radiance-substance-all-${{ env.SUBSTANCE_PKG }}.jar"
         machine=${{ matrix.wsystem }}
         if [ "$machine" = "windows" ] ; then
-          choco install wget --no-progress 
+          C:/msys64/usr/bin/wget.exe ${command}
+        else 
+          wget ${command}
         fi
-        wget --no-check-certificate -O "${{ env.WEASIS_INPUT }}/substance.jar"  https://raw.github.com/nroduit/mvn-repo/master/org/pushing-pixels/radiance-substance-all/${{ env.SUBSTANCE_PKG }}/radiance-substance-all-${{ env.SUBSTANCE_PKG }}.jar  
         echo "$(ls -la ${{ env.WEASIS_INPUT }})"
         
     - name: Run jpackage
@@ -93,8 +95,8 @@ jobs:
           jpackage --type app-image --input "${{ env.WEASIS_INPUT_BIN }}" --dest "${{ env.WEASIS_OUTPUT }}-debug" --name "$NAME" \
           --main-jar weasis-launcher.jar --main-class org.weasis.launcher.AppLauncher --add-modules "$JDK_MODULES" \
           --resource-dir "$RES" --java-options "$JVM_ARGS" --app-version "$WEASIS_CLEAN_VERSION" --win-console --verbose
-          mkdir "${{ env.WEASIS_OUTPUT_BIN }}/$NAME/debug"
-          cp "${{ env.WEASIS_OUTPUT }}-debug/$NAME/$NAME.exe" "${{ env.WEASIS_OUTPUT_BIN }}/$NAME/debug/$NAME.exe"
+          mkdir "${{ env.WEASIS_OUTPUT_BIN }}/debug"
+          cp "${{ env.WEASIS_OUTPUT }}-debug/$NAME/$NAME.exe" "${{ env.WEASIS_OUTPUT_BIN }}/debug/$NAME.exe"
         fi
         echo "$(ls -la ${{ env.WEASIS_OUTPUT }})"
 
