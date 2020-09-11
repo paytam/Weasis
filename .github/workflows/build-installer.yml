@@ -24,27 +24,35 @@ jobs:
    #   run: mvn clean install -Dportable=true -P compressXZ -f weasis-distributions
       
     - name: Retrieve version
-      run: |
-        echo ::set-env name=WEASIS_VERSION::$(awk -F'[<>]' '/<revision>/{print $3}' weasis-parent/pom.xml)$(awk -F'[<>]' '/<changelist>/{print $3}' weasis-parent/pom.xml)
-        echo ::set-env name=WEASIS_CLEAN_VERSION::$(echo ${{ env.WEASIS_VERSION }} | sed -e 's/"//g' -e 's/-.*//')
+      run: echo ::set-env name=WEASIS_VERSION::$(awk -F'[<>]' '/<revision>/{print $3}' weasis-parent/pom.xml)$(awk -F'[<>]' '/<changelist>/{print $3}' weasis-parent/pom.xml)
       shell: bash
 
-    - name: Set limited version
-      run: |
-        echo "variable" $WEASIS_VERSION
-        echo "env variable" ${{ env.WEASIS_VERSION }}
-        echo "env variable" ${{ env.WEASIS_CLEAN_VERSION }}
-      #  echo ::set-env name=WEASIS_CLEAN_VERSION::$(echo ${{ env.WEASIS_VERSION }} | sed -e 's/"//g' -e 's/-.*//')
+    - name: Set compatible version
+      run: echo ::set-env name=WEASIS_CLEAN_VERSION::$(echo $WEASIS_VERSION | sed -e 's/"//g' -e 's/-.*//')
       shell: bash
+
+    - name: Unip portable version
+      run: |
+        unzip -o "weasis-distributions/target/portable-dist/weasis-portable.zip" -d "weasis-distributions/target/portable-dist/weasis-portable"
+        echo ::set-env name=WEASIS_INPUT::"weasis-distributions/target/portable-dist/weasis-portable"
 
     - name: Required variables
       run: |
+        echo $GITHUB_WORKSPACE
         echo "${{ matrix.wsystem }}-${{ matrix.warc }}"
-        if ["$RUNNER_OS" == "Linux"]; then
-          echo ${{ matrix.wsystem }}-${{ matrix.warc }}
-        elif ["$RUNNER_OS" == "Windows"]; then
-          echo ${{ matrix.wsystem }}-${{ matrix.warc }}
-        elif ["$RUNNER_OS" == "MacOS"]; then
-          echo ${{ matrix.wsystem }}-${{ matrix.warc }}
+        if [ "$RUNNER_OS" == "Linux" ]; then
+          echo "${{ matrix.wsystem }}-${{ matrix.warc }}"
+        elif [ "$RUNNER_OS" == "Windows" ]; then
+          echo "${{ matrix.wsystem }}-${{ matrix.warc }}"
+        elif [ "$RUNNER_OS" == "macOS" ]; then
+          echo "${{ matrix.wsystem }}-${{ matrix.warc }}"
+        else
+              echo "$RUNNER_OS not supported"
+              exit 1
         fi
+      env:
+        JDK_MODULES: "java.base,java.compiler,java.datatransfer,java.desktop,java.logging,java.management,java.prefs,java.xml,jdk.localedata,jdk.charsets,jdk.crypto.ec,jdk.crypto.cryptoki,jdk.unsupported,jdk.jdwp.agent"
+        NAME: "Weasis"
+        IDENTIFIER: "org.weasis.viewer"
+        JVM_ARGS: "-splash:$APPDIR/resources/images/about-round.png -Dgosh.port=17179"
       shell: bash
