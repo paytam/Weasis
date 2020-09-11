@@ -24,7 +24,8 @@ jobs:
    #   run: mvn clean install -Dportable=true -P compressXZ -f weasis-distributions
       
     - name: Retrieve version
-      run: echo ::set-env name=WEASIS_VERSION::$(awk -F'[<>]' '/<revision>/{print $3}' weasis-parent/pom.xml)$(awk -F'[<>]' '/<changelist>/{print $3}' weasis-parent/pom.xml)
+      run: |
+        echo ::set-env name=WEASIS_VERSION::$(awk -F'[<>]' '/<revision>/{print $3}' weasis-parent/pom.xml)$(awk -F'[<>]' '/<changelist>/{print $3}' weasis-parent/pom.xml)
       shell: bash
 
     - name: Set limited version
