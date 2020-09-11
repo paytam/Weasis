@@ -62,21 +62,20 @@ jobs:
         # Remove pack jar for launcher
         rm -f "$WEASIS_INPUT_BIN"/*.jar.pack.gz
         # Remove the unrelated native packages
-        find "$WEASIS_INPUT_BIN"/bundle/*-${{ matrix.wsystem }}-* -type f ! -name '*-'${{ matrix.warc }}'-*'  -exec rm -f {} \;
+        find "$WEASIS_INPUT_BIN"/bundle/weasis-opencv-core-* -type f ! -name '*weasis-opencv-core-${{ matrix.wsystem }}-${{ matrix.warc }}-*'  -exec rm -f {} \;
         # Special case with 32-bit architecture, remove 64-bit lib
         if [ "${{ matrix.warc }}" = "x86" ] ; then
-          find "$WEASIS_INPUT_BIN"/bundle/*-x86* -type f -name '*-${{ matrix.wsystem }}-x86-64-*'  -exec rm -f {} \;
+          rm -f $WEASIS_INPUT_BIN"/bundle/weasis-opencv-core-${{ matrix.wsystem }}-x86-64-*
         fi
+        echo "$(ls $WEASIS_INPUT_BIN/)"
         echo "$(ls $WEASIS_INPUT_BIN/bundle/)"
 
     - name: Replace substance by a more recent version for Java 11
       shell: bash
       run: |
         mvn dependency:get -Dartifact=org.pushing-pixels:radiance-substance-all:$SUBSTANCE_PKG -DremoteRepositories=https://raw.github.com/nroduit/mvn-repo/master/
-        MVN_REPO=$(mvn help:evaluate -Dexpression=settings.localRepository | grep -v '\[INFO\]')
-        echo "Local maven "$MVN_REPO
-        SUBSTANCE_FILE="${MVN_REPO//[$'\t\r\n']}/org/pushing-pixels/radiance-substance-all/$SUBSTANCE_PKG/radiance-substance-all-$SUBSTANCE_PKG.jar"
-        if [[ -r "$SUBSTANCE_FILE" ]] ; then
+        SUBSTANCE_FILE="~/.m2/repository/org/pushing-pixels/radiance-substance-all/$SUBSTANCE_PKG/radiance-substance-all-$SUBSTANCE_PKG.jar"
+        if [[ -r "${SUBSTANCE_FILE}" ]] ; then
           cp -fv "${SUBSTANCE_FILE}" "${WEASIS_INPUT}/substance.jar"
         else
           echo "Warning: cannot copy Substance file: ${SUBSTANCE_FILE}"
@@ -97,8 +96,9 @@ jobs:
           --main-jar weasis-launcher.jar --main-class org.weasis.launcher.AppLauncher --add-modules "$JDK_MODULES" \
           --resource-dir "$RES" --java-options "$JVM_ARGS" --app-version "$WEASIS_CLEAN_VERSION" --win-console --verbose
           mkdir "$WEASIS_INPUT_BIN/debug"
-          cp "$EASIS_OUTPUT-debug/$NAME/$NAME.exe"  "$WEASIS_OUTPUT_BIN/debug/$NAME.exe"
+          cp "$EASIS_OUTPUT-debug/$NAME/$NAME.exe" "$WEASIS_OUTPUT_BIN/debug/$NAME.exe"
         fi
+        echo "$(ls $WEASIS_OUTPUT)"
 
     - name: Adapt launching options
       shell: bash
