@@ -31,7 +31,7 @@ jobs:
       run: |
         echo "variable" $WEASIS_VERSION
         echo "env variable" ${{ env.WEASIS_VERSION }}
-        echo ::set-env name=WEASIS_CLEAN_VERSION::echo ${{ env.WEASIS_VERSION }} | sed -e 's/"//g' -e 's/-.*//')
+        echo ::set-env name=WEASIS_CLEAN_VERSION::$(echo ${{ env.WEASIS_VERSION }} | sed -e 's/"//g' -e 's/-.*//')
       shell: bash
 
     - name: Required variables
