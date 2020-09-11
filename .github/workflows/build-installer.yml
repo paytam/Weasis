@@ -72,13 +72,7 @@ jobs:
     - name: Replace substance by a more recent version for Java 11
       shell: bash
       run: |
-        command="--no-check-certificate -O "${{ env.WEASIS_INPUT }}/substance.jar"  https://raw.github.com/nroduit/mvn-repo/master/org/pushing-pixels/radiance-substance-all/${{ env.SUBSTANCE_PKG }}/radiance-substance-all-${{ env.SUBSTANCE_PKG }}.jar"
-        machine=${{ matrix.wsystem }}
-        if [ "$machine" = "windows" ] ; then
-          C:/msys64/usr/bin/wget.exe ${command}
-        else 
-          wget ${command}
-        fi
+        curl -o "${{ env.WEASIS_INPUT }}/substance.jar" https://raw.github.com/nroduit/mvn-repo/master/org/pushing-pixels/radiance-substance-all/${{ env.SUBSTANCE_PKG }}/radiance-substance-all-${{ env.SUBSTANCE_PKG }}.jar
         echo "$(ls -la ${{ env.WEASIS_INPUT }})"
         
     - name: Run jpackage
