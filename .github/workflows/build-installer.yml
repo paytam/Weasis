@@ -72,6 +72,9 @@ jobs:
     - name: Replace substance by a more recent version for Java 11
       shell: bash
       run: |
+        if [ "$machine" = "windows" ] ; then
+          choco install wget --no-progress 
+        fi
         wget -O "${{ env.WEASIS_INPUT }}/substance.jar"  https://raw.github.com/nroduit/mvn-repo/master/org/pushing-pixels/radiance-substance-all/{{ env.SUBSTANCE_PKG }}/radiance-substance-all-${{ env.SUBSTANCE_PKG }}.jar  
         echo "$(ls -la ${{ env.WEASIS_INPUT }})"
         
