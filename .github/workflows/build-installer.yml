@@ -167,7 +167,7 @@ jobs:
           jpackage --type "msi" --app-image "${{ env.WEASIS_INPUT_BIN }}" --dest "${{ env.WEASIS_OUTPUT }}" --name "$NAME" --resource-dir "$RES/msi/$ARC_NAME" \
           --license-file "${{ env.WEASIS_INPUT }}/Licence.txt" --description "Weasis DICOM viewer" \
           --win-menu --win-menu-group "$NAME" --win-upgrade-uuid "$UPGRADE_UID" \
-          --copyright "$COPYRIGHT" --app-version "$WEASIS_CLEAN_VERSION" \
+          --copyright "$COPYRIGHT" --app-version "$WEASIS_CLEAN_VERSION" --temp "tmp" \
           --vendor "$VENDOR" --file-associations "$FILE_ASSOC" --verbose
           mv "${{ env.WEASIS_OUTPUT_BIN }}/$NAME-$WEASIS_CLEAN_VERSION.msi" "${{ env.WEASIS_OUTPUT_BIN }}/$NAME-$WEASIS_CLEAN_VERSION-$ARC_NAME.msi"
         elif [ "$machine" = "linux" ] ; then
