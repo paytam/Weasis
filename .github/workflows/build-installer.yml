@@ -16,17 +16,20 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Set up JDK 16-ea
-      uses: actions/setup-java@v1
-      with:
-        java-version: 16.0.0-ea.13
+    #  uses: actions/setup-java@v1
+    #  with:
+     #   java-version: 16.0.0-ea.13
 
    # - name: Build with Maven
    #   run: mvn clean install -Dportable=true -P compressXZ -f weasis-distributions
       
     - name: Retrieve version
+      run: echo ::set-env name=WEASIS_VERSION::$(awk -F'[<>]' '/<revision>/{print $3}' weasis-parent/pom.xml)$(awk -F'[<>]' '/<changelist>/{print $3}' weasis-parent/pom.xml)
+      shell: bash
+
+    - name: Set limited version
       run: |
-        echo '::set-env name=WEASIS_VERSION::$(awk -F'[<>]' '/<revision>/{print $3}' weasis-parent/pom.xml)$(awk -F'[<>]' '/<changelist>/{print $3}' weasis-parent/pom.xml)'
-        echo '::set-env name=WEASIS_CLEAN_VERSION::echo $WEASIS_VERSION | sed -e 's/"//g' -e 's/-.*//')'
+        echo ::set-env name=WEASIS_CLEAN_VERSION::echo $WEASIS_VERSION | sed -e 's/"//g' -e 's/-.*//')
         echo $WEASIS_VERSION
         echo $WEASIS_CLEAN_VERSION
       shell: bash
