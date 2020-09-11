@@ -15,7 +15,7 @@ jobs:
         - { os: windows-latest, name: VS2019, cc: cl, cxx: cl, platform: x64, wsystem: windows, warc: x86_64 }
     steps:
     - uses: actions/checkout@v2
-    - name: Set up JDK 16-ea
+   # - name: Set up JDK 16-ea
     #  uses: actions/setup-java@v1
     #  with:
      #   java-version: 16.0.0-ea.13
@@ -24,8 +24,7 @@ jobs:
    #   run: mvn clean install -Dportable=true -P compressXZ -f weasis-distributions
       
     - name: Retrieve version
-      run: |
-        echo ::set-env name=WEASIS_VERSION::$(awk -F'[<>]' '/<revision>/{print $3}' weasis-parent/pom.xml)$(awk -F'[<>]' '/<changelist>/{print $3}' weasis-parent/pom.xml)
+      run: echo ::set-env name=WEASIS_VERSION::$(awk -F'[<>]' '/<revision>/{print $3}' weasis-parent/pom.xml)$(awk -F'[<>]' '/<changelist>/{print $3}' weasis-parent/pom.xml)
       shell: bash
 
     - name: Set limited version
