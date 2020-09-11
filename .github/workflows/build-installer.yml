@@ -85,8 +85,8 @@ jobs:
         RES: "weasis-distributions/script/resources/${{ matrix.wsystem }}"
       run: |
         jpackage --type app-image --input "${{ env.WEASIS_INPUT_BIN }}" --dest "${{ env.WEASIS_OUTPUT }}" --name "$NAME" \
-        --main-jar weasis-launcher.jar --main-class org.weasis.launcher.AppLauncher --add-modules "${{ JDK_MODULES }}" \
-        --resource-dir "${{ $RES }}" --java-options "${{ JVM_ARGS }}" --app-version "${{ WEASIS_CLEAN_VERSION }}" --verbose
+        --main-jar weasis-launcher.jar --main-class org.weasis.launcher.AppLauncher --add-modules "${{ env.JDK_MODULES }}" \
+        --resource-dir "${{ env.$RES }}" --java-options "${{ env.JVM_ARGS }}" --app-version "${{ env.WEASIS_CLEAN_VERSION }}" --verbose
          
         # Build exe for debugging in the console and copy them into the debug folder
         if [ "${{ matrix.wsystem }}" == "windows" ] ; then
