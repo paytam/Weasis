@@ -22,7 +22,7 @@ jobs:
       #  - { os: ubuntu-latest, name: GNU, cc: gcc, cxx: g++, platform: x64, wsystem: linux, warc: x86-64 }
       #  - { os: macos-latest, name: Clang, cc: clang, cxx: clang++, platform: x64, wsystem: macosx, warc: x86-64 }
       #  - { os: windows-latest, name: VS2019, cc: cl, cxx: cl, platform: x32, wsystem: windows, warc: x86 }
-        - { os: windows-2016, name: VS2017, cc: cl, cxx: cl, platform: x64, wsystem: windows, warc: x86-64 }
+        - { os: windows-latest, name: VS2019, cc: cl, cxx: cl, platform: x64, wsystem: windows, warc: x86-64 }
     steps:
     - uses: actions/checkout@v2
     - name: Set up JDK 16-ea
@@ -38,13 +38,13 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-maven-
           
-    - name: Cache weasis-portable
-      uses: actions/cache@v2
-      with:
-        path: ${{ env.WEASIS_INPUT }}
-        key: ${{ runner.os }}-weasis-${{ hashFiles('**/*.xz') }}
-        restore-keys: |
-          ${{ runner.os }}-weasis-
+    #- name: Cache weasis-portable
+    #  uses: actions/cache@v2
+    #  with:
+    #    path: ${{ env.WEASIS_INPUT }}
+    #    key: ${{ runner.os }}-weasis-${{ hashFiles('**/*.xz') }}
+    #    restore-keys: |
+    #      ${{ runner.os }}-weasis-
 
     - name: Build with Maven
       run: |
@@ -165,8 +165,7 @@ jobs:
         if [ "$machine" = "windows" ] ; then
           [ "$ARC_NAME" = "x86" ] && UPGRADE_UID="3aedc24e-48a8-4623-ab39-0c3c01c7383b" || UPGRADE_UID="3aedc24e-48a8-4623-ab39-0c3c01c7383a"
           jpackage --type "msi" --app-image "${{ env.WEASIS_INPUT_BIN }}" --dest "${{ env.WEASIS_OUTPUT }}" --name "$NAME" --resource-dir "$RES/msi/$ARC_NAME" \
-          --license-file "${{ env.WEASIS_INPUT }}/Licence.txt" --description "Weasis DICOM viewer" \
-          --win-menu --win-menu-group "$NAME" --win-upgrade-uuid "$UPGRADE_UID" \
+          --license-file "${{ env.WEASIS_INPUT }}/Licence.txt" --description "Weasis DICOM viewer" -win-upgrade-uuid "$UPGRADE_UID" \
           --copyright "$COPYRIGHT" --app-version "$WEASIS_CLEAN_VERSION" \
           --vendor "$VENDOR" --file-associations "$FILE_ASSOC" --verbose
           mv "${{ env.WEASIS_OUTPUT_BIN }}/$NAME-$WEASIS_CLEAN_VERSION.msi" "${{ env.WEASIS_OUTPUT_BIN }}/$NAME-$WEASIS_CLEAN_VERSION-$ARC_NAME.msi"
