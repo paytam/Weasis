@@ -165,7 +165,7 @@ jobs:
         if [ "$machine" = "windows" ] ; then
           [ "$ARC_NAME" = "x86" ] && UPGRADE_UID="3aedc24e-48a8-4623-ab39-0c3c01c7383b" || UPGRADE_UID="3aedc24e-48a8-4623-ab39-0c3c01c7383a"
           jpackage --type "msi" --app-image "${{ env.WEASIS_INPUT_BIN }}" --dest "${{ env.WEASIS_OUTPUT }}" --name "$NAME" --resource-dir "$RES/msi/$ARC_NAME" \
-          --license-file "${{ env.WEASIS_INPUT }}/Licence.txt" --description "Weasis DICOM viewer" -win-upgrade-uuid "$UPGRADE_UID" \
+          --license-file "${{ env.WEASIS_INPUT }}/Licence.txt" --description "Weasis DICOM viewer" --win-upgrade-uuid "$UPGRADE_UID" \
           --copyright "$COPYRIGHT" --app-version "$WEASIS_CLEAN_VERSION" \
           --vendor "$VENDOR" --file-associations "$FILE_ASSOC" --verbose
           mv "${{ env.WEASIS_OUTPUT_BIN }}/$NAME-$WEASIS_CLEAN_VERSION.msi" "${{ env.WEASIS_OUTPUT_BIN }}/$NAME-$WEASIS_CLEAN_VERSION-$ARC_NAME.msi"
