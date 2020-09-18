@@ -21,7 +21,7 @@ jobs:
         - { os: ubuntu-latest, name: GNU, cc: gcc, cxx: g++, platform: x64, wsystem: linux, warc: x86-64 }
       #  - { os: macos-latest, name: Clang, cc: clang, cxx: clang++, platform: x64, wsystem: macosx, warc: x86-64 }
       #  - { os: windows-latest, name: VS2019, cc: cl, cxx: cl, platform: x32, wsystem: windows, warc: x86 }
-      #  - { os: windows-latest, name: VS2019, cc: cl, cxx: cl, platform: x64, wsystem: windows, warc: x86-64 }
+        - { os: windows-latest, name: VS2019, cc: cl, cxx: cl, platform: x64, wsystem: windows, warc: x86-64 }
     steps:
     - uses: actions/checkout@v2
     - name: Set up JDK 16-ea
@@ -191,8 +191,6 @@ jobs:
           --mac-signing-key-user-name "$CERTIFICATE" --verbose "$MAC_SIGN"
           cp ${{ env.WEASIS_OUTPUT }}/*.pkg final-dist
         fi
-        echo "$(ls -la ${{ env.WEASIS_OUTPUT }}/${{ env.NAME }})"
-        
         echo ::set-env name=APP_ARTIFACT::weassis-${machine}-${ARC_NAME}-${{ env.WEASIS_CLEAN_VERSION }}
         
     - name: Upload the final opencv binary
