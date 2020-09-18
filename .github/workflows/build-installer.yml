@@ -96,7 +96,7 @@ jobs:
           jpackage --type app-image --input "${{ env.WEASIS_INPUT_BIN }}" --dest "${{ env.WEASIS_OUTPUT }}-debug" --name "$NAME" \
           --main-jar weasis-launcher.jar --main-class org.weasis.launcher.AppLauncher --add-modules "$JDK_MODULES" \
           --resource-dir "$RES" --java-options "$JVM_ARGS" --app-version "$WEASIS_CLEAN_VERSION" --win-console --verbose
-          mkdir "${{ env.WEASIS_OUTPUT }}/${NAME}/debug"
+          mkdir -p "${{ env.WEASIS_OUTPUT }}/${NAME}/debug"
           cp "${{ env.WEASIS_OUTPUT }}-debug/${NAME}/$NAME.exe" "${{ env.WEASIS_OUTPUT }}/${NAME}/debug/$NAME.exe"
         fi
         echo "$(ls -la ${{ env.WEASIS_OUTPUT }}/${NAME})"
@@ -159,6 +159,7 @@ jobs:
         VENDOR: "Weasis Team"
         COPYRIGHT: "© 2009-2020 Weasis Team"
       run: |
+        mkdir -p final-dist
         machine=${{ matrix.wsystem }}
         ARC_NAME=${{ matrix.warc }}
         if [ "$machine" = "windows" ] ; then
@@ -167,7 +168,7 @@ jobs:
           --license-file "${{ env.WEASIS_INPUT }}/Licence.txt" --description "Weasis DICOM viewer" --win-upgrade-uuid "$UPGRADE_UID" \
           --copyright "$COPYRIGHT" --app-version "$WEASIS_CLEAN_VERSION" \
           --vendor "$VENDOR" --file-associations "$FILE_ASSOC" --verbose
-          mv "${{ env.WEASIS_OUTPUT_BIN }}/$NAME-$WEASIS_CLEAN_VERSION.msi" "${{ env.WEASIS_OUTPUT_BIN }}/$NAME-$WEASIS_CLEAN_VERSION-$ARC_NAME.msi"
+          cp "${{ env.WEASIS_OUTPUT }}/*.msi" "final-dist/${NAME}-${WEASIS_CLEAN_VERSION}-${ARC_NAME}.msi"
         elif [ "$machine" = "linux" ] ; then
           declare -a installerTypes=("deb" "rpm")
           for installerType in ${installerTypes[@]}; do
@@ -176,10 +177,20 @@ jobs:
             --copyright "$COPYRIGHT" --app-version "$WEASIS_CLEAN_VERSION" --file-associations "$FILE_ASSOC" \
             --linux-app-release "$REVISON_INC" --linux-package-name "weasis" --linux-deb-maintainer "Nicolas Roduit" --linux-rpm-license-type "EPL-2.0" \
             --linux-menu-group "Viewer;MedicalSoftware;Graphics;" --linux-app-category "science" --linux-shortcut --verbose
+            cp "${{ env.WEASIS_OUTPUT }}/*.${installerType}" "final-dist"
           done
         elif [ "$machine" = "macosx" ] ; then
           jpackage --type "pkg" --app-image "${{ env.WEASIS_OUTPUT }}/${NAME}.app" --dest "${{ env.WEASIS_OUTPUT }}" --name "$NAME" --resource-dir "$RES" \
           --license-file "${{ env.WEASIS_INPUT }}/Licence.txt" --copyright "$COPYRIGHT" --app-version "$WEASIS_CLEAN_VERSION" --mac-package-identifier "$IDENTIFIER" \
           --mac-signing-key-user-name "$CERTIFICATE" --verbose "$MAC_SIGN"
+          cp "${{ env.WEASIS_OUTPUT }}/*.pkg" "final-dist"
         fi
         echo "$(ls -la ${{ env.WEASIS_OUTPUT }}/${NAME})"
+        
+        echo ::set-env name=APP_ARTIFACT::weassis-${machine}-${ARC_NAME}-${WEASIS_CLEAN_VERSION}
+        
+    - name: Upload the final opencv binary
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ env.APP_ARTIFACT }}
+        path: final-dist
