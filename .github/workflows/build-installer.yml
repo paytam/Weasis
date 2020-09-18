@@ -12,7 +12,6 @@ jobs:
       WEASIS_INPUT: "weasis-distributions/target/portable-dist/weasis-portable"
       WEASIS_OUTPUT: "weasis-distributions/target/native-dist"
       WEASIS_INPUT_BIN: "weasis-distributions/target/portable-dist/weasis-portable/weasis"
-      WEASIS_OUTPUT_BIN: "weasis-distributions/target/native-dist/weasis"
       SUBSTANCE_PKG: "3.0.0"  # Package for Java 11 (remove in weasis 4)
     runs-on: ${{ matrix.os }}
     strategy:
@@ -97,10 +96,10 @@ jobs:
           jpackage --type app-image --input "${{ env.WEASIS_INPUT_BIN }}" --dest "${{ env.WEASIS_OUTPUT }}-debug" --name "$NAME" \
           --main-jar weasis-launcher.jar --main-class org.weasis.launcher.AppLauncher --add-modules "$JDK_MODULES" \
           --resource-dir "$RES" --java-options "$JVM_ARGS" --app-version "$WEASIS_CLEAN_VERSION" --win-console --verbose
-          mkdir "${{ env.WEASIS_OUTPUT_BIN }}/debug"
-          cp "${{ env.WEASIS_OUTPUT }}-debug/$NAME/$NAME.exe" "${{ env.WEASIS_OUTPUT_BIN }}/debug/$NAME.exe"
+          mkdir "${{ env.WEASIS_OUTPUT }}/${NAME}/debug"
+          cp "${{ env.WEASIS_OUTPUT }}-debug/${NAME}/$NAME.exe" "${{ env.WEASIS_OUTPUT }}/${NAME}/debug/$NAME.exe"
         fi
-        echo "$(ls -la ${{ env.WEASIS_OUTPUT_BIN }})"
+        echo "$(ls -la ${{ env.WEASIS_OUTPUT }}/${NAME})"
 
     - name: Adapt launching options
       shell: bash
@@ -109,11 +108,11 @@ jobs:
       run: |
         machine=${{ matrix.wsystem }}
         if [ "$machine" = "macosx" ] ; then
-          OUT_APP="${{ env.WEASIS_OUTPUT }}/$NAME.app/Contents/app"
+          OUT_APP="${{ env.WEASIS_OUTPUT }}/${NAME}.app/Contents/app"
         elif [ "$machine" = "windows" ] ; then
-          OUT_APP="${{ env.WEASIS_OUTPUT_BIN }}/app"         
+          OUT_APP="${{ env.WEASIS_OUTPUT }}/${NAME}/app"         
         else
-          OUT_APP="${{ env.WEASIS_OUTPUT_BIN }}/lib/app"
+          OUT_APP="${{ env.WEASIS_OUTPUT }}/${NAME}/lib/app"
         fi
 
         match="\[JavaOptions\]"
@@ -141,13 +140,13 @@ jobs:
         rm -f "$OUT_APP/$NAME.cfg.bck"
 
         if [ "$machine" = "linux" ] ; then
-          cp "$RES/Dicomizer.desktop" "${{ env.WEASIS_OUTPUT_BIN }}/lib/weasis-Dicomizer.desktop"
+          cp "$RES/Dicomizer.desktop" "${{ env.WEASIS_OUTPUT }}/${NAME}/lib/weasis-Dicomizer.desktop"
         elif [ "$machine" = "windows" ] ; then
           # Fix icon of second launcher
-          cp "$RES/Dicomizer.ico" "${{ env.WEASIS_OUTPUT_BIN }}/Dicomizer.ico"
+          cp "$RES/Dicomizer.ico" "${{ env.WEASIS_OUTPUT }}/${NAME}/Dicomizer.ico"
         elif [ "$machine" = "macosx" ] ; then
-          cp -Rf "$RES/weasis-uri-handler.app" "${{ env.WEASIS_OUTPUT }}/$NAME.app/Contents/MacOS/"
-          cp -Rf "$RES/Dicomizer.app" "${{ env.WEASIS_OUTPUT }}/$NAME.app/Contents/MacOS/"
+          cp -Rf "$RES/weasis-uri-handler.app" "${{ env.WEASIS_OUTPUT }}/${NAME}.app/Contents/MacOS/"
+          cp -Rf "$RES/Dicomizer.app" "${{ env.WEASIS_OUTPUT }}/${NAME}.app/Contents/MacOS/"
         fi
         
         cat "$OUT_APP/$NAME.cfg"
@@ -164,7 +163,7 @@ jobs:
         ARC_NAME=${{ matrix.warc }}
         if [ "$machine" = "windows" ] ; then
           [ "$ARC_NAME" = "x86" ] && UPGRADE_UID="3aedc24e-48a8-4623-ab39-0c3c01c7383b" || UPGRADE_UID="3aedc24e-48a8-4623-ab39-0c3c01c7383a"
-          jpackage --type "msi" --app-image "${{ env.WEASIS_INPUT_BIN }}" --dest "${{ env.WEASIS_OUTPUT }}" --name "$NAME" --resource-dir "$RES/msi/$ARC_NAME" \
+          jpackage --type "msi" --app-image "${{ env.WEASIS_OUTPUT }}/${NAME}" --dest "${{ env.WEASIS_OUTPUT }}" --name "$NAME" --resource-dir "$RES/msi/$ARC_NAME" \
           --license-file "${{ env.WEASIS_INPUT }}/Licence.txt" --description "Weasis DICOM viewer" --win-upgrade-uuid "$UPGRADE_UID" \
           --copyright "$COPYRIGHT" --app-version "$WEASIS_CLEAN_VERSION" \
           --vendor "$VENDOR" --file-associations "$FILE_ASSOC" --verbose
@@ -172,15 +171,15 @@ jobs:
         elif [ "$machine" = "linux" ] ; then
           declare -a installerTypes=("deb" "rpm")
           for installerType in ${installerTypes[@]}; do
-            jpackage --type "$installerType" --app-image "${{ env.WEASIS_INPUT_BIN }}" --dest "${{ env.WEASIS_OUTPUT }}" --name "$NAME" --resource-dir "$RES/$installerType" \
+            jpackage --type "$installerType" --app-image "${{ env.WEASIS_OUTPUT }}/${NAME}" --dest "${{ env.WEASIS_OUTPUT }}" --name "$NAME" --resource-dir "$RES/$installerType" \
             --license-file "${{ env.WEASIS_INPUT }}/Licence.txt" --description "Weasis DICOM viewer" --vendor "$VENDOR" \
             --copyright "$COPYRIGHT" --app-version "$WEASIS_CLEAN_VERSION" --file-associations "$FILE_ASSOC" \
             --linux-app-release "$REVISON_INC" --linux-package-name "weasis" --linux-deb-maintainer "Nicolas Roduit" --linux-rpm-license-type "EPL-2.0" \
             --linux-menu-group "Viewer;MedicalSoftware;Graphics;" --linux-app-category "science" --linux-shortcut --verbose
           done
         elif [ "$machine" = "macosx" ] ; then
-          jpackage --type "pkg" --app-image "${{ env.WEASIS_INPUT_BIN }}.app" --dest "${{ env.WEASIS_OUTPUT }}" --name "$NAME" --resource-dir "$RES" \
+          jpackage --type "pkg" --app-image "${{ env.WEASIS_OUTPUT }}/${NAME}.app" --dest "${{ env.WEASIS_OUTPUT }}" --name "$NAME" --resource-dir "$RES" \
           --license-file "${{ env.WEASIS_INPUT }}/Licence.txt" --copyright "$COPYRIGHT" --app-version "$WEASIS_CLEAN_VERSION" --mac-package-identifier "$IDENTIFIER" \
           --mac-signing-key-user-name "$CERTIFICATE" --verbose "$MAC_SIGN"
         fi
-        echo "$(ls -la ${{ env.WEASIS_OUTPUT_BIN }})"
+        echo "$(ls -la ${{ env.WEASIS_OUTPUT }}/${NAME})"
