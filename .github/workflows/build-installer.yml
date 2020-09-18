@@ -8,7 +8,7 @@ jobs:
       JDK_MODULES: "java.base,java.compiler,java.datatransfer,java.desktop,java.logging,java.management,java.prefs,java.xml,jdk.localedata,jdk.charsets,jdk.crypto.ec,jdk.crypto.cryptoki,jdk.unsupported,jdk.jdwp.agent"
       NAME: "Weasis"
       IDENTIFIER: "org.weasis.viewer"
-      JVM_ARGS: "-splash:$APPDIR/resources/images/about-round.png -Dgosh.port=17179"
+      JVM_ARGS: "-Dgosh.port=17179"
       WEASIS_INPUT: "weasis-distributions/target/portable-dist/weasis-portable"
       WEASIS_OUTPUT: "weasis-distributions/target/native-dist"
       WEASIS_INPUT_BIN: "weasis-distributions/target/portable-dist/weasis-portable/weasis"
@@ -18,7 +18,7 @@ jobs:
       matrix:
         include:
       #  - { os: ubuntu-latest, name: GNU, cc: gcc, cxx: g++, platform: x32, wsystem: linux, warc: x86 }
-      #  - { os: ubuntu-latest, name: GNU, cc: gcc, cxx: g++, platform: x64, wsystem: linux, warc: x86-64 }
+        - { os: ubuntu-latest, name: GNU, cc: gcc, cxx: g++, platform: x64, wsystem: linux, warc: x86-64 }
       #  - { os: macos-latest, name: Clang, cc: clang, cxx: clang++, platform: x64, wsystem: macosx, warc: x86-64 }
       #  - { os: windows-latest, name: VS2019, cc: cl, cxx: cl, platform: x32, wsystem: windows, warc: x86 }
         - { os: windows-latest, name: VS2019, cc: cl, cxx: cl, platform: x64, wsystem: windows, warc: x86-64 }
@@ -87,15 +87,21 @@ jobs:
       env:
         RES: "weasis-distributions/script/resources/${{ matrix.wsystem }}"
       run: |
+        if [ "${{ matrix.wsystem }}" == "windows" ] ; then
+          # Bug on Windows with splash screen
+          JVM_ARGS="${{ env.JVM_ARGS }}"
+        else
+          JVM_ARGS="-splash:\$APPDIR/resources/images/about-round.png ${{ env.JVM_ARGS }}"
+        fi
         jpackage --type app-image --input "${{ env.WEASIS_INPUT_BIN }}" --dest "${{ env.WEASIS_OUTPUT }}" --name "$NAME" \
         --main-jar weasis-launcher.jar --main-class org.weasis.launcher.AppLauncher --add-modules "${{ env.JDK_MODULES }}" \
-        --resource-dir "${{ env.RES }}" --java-options "${{ env.JVM_ARGS }}" --app-version "${{ env.WEASIS_CLEAN_VERSION }}" --verbose
+        --resource-dir "${{ env.RES }}" --java-options "${JVM_ARGS}" --app-version "${{ env.WEASIS_CLEAN_VERSION }}" --verbose
          
         # Build exe for debugging in the console and copy them into the debug folder
         if [ "${{ matrix.wsystem }}" == "windows" ] ; then
           jpackage --type app-image --input "${{ env.WEASIS_INPUT_BIN }}" --dest "${{ env.WEASIS_OUTPUT }}-debug" --name "$NAME" \
-          --main-jar weasis-launcher.jar --main-class org.weasis.launcher.AppLauncher --add-modules "$JDK_MODULES" \
-          --resource-dir "$RES" --java-options "$JVM_ARGS" --app-version "$WEASIS_CLEAN_VERSION" --win-console --verbose
+          --main-jar weasis-launcher.jar --main-class org.weasis.launcher.AppLauncher --add-modules "${{ env.JDK_MODULES }}" \
+          --resource-dir "${{ env.RES }}" --java-options "${JVM_ARGS}" --app-version "${{ env.WEASIS_CLEAN_VERSION }}" --win-console --verbose
           mkdir -p "${{ env.WEASIS_OUTPUT }}/${NAME}/debug"
           cp "${{ env.WEASIS_OUTPUT }}-debug/${NAME}/$NAME.exe" "${{ env.WEASIS_OUTPUT }}/${NAME}/debug/$NAME.exe"
         fi
@@ -168,7 +174,6 @@ jobs:
           --license-file "${{ env.WEASIS_INPUT }}/Licence.txt" --description "Weasis DICOM viewer" --win-upgrade-uuid "$UPGRADE_UID" \
           --copyright "$COPYRIGHT" --app-version "$WEASIS_CLEAN_VERSION" \
           --vendor "$VENDOR" --file-associations "$FILE_ASSOC" --verbose
-          ls -la "${{ env.WEASIS_OUTPUT }}"
           cp "${{ env.WEASIS_OUTPUT }}/${NAME}-${WEASIS_CLEAN_VERSION}.msi" "final-dist/${NAME}-${WEASIS_CLEAN_VERSION}-${ARC_NAME}.msi"
         elif [ "$machine" = "linux" ] ; then
           declare -a installerTypes=("deb" "rpm")
