@@ -168,7 +168,8 @@ jobs:
           --license-file "${{ env.WEASIS_INPUT }}/Licence.txt" --description "Weasis DICOM viewer" --win-upgrade-uuid "$UPGRADE_UID" \
           --copyright "$COPYRIGHT" --app-version "$WEASIS_CLEAN_VERSION" \
           --vendor "$VENDOR" --file-associations "$FILE_ASSOC" --verbose
-          cp "${{ env.WEASIS_OUTPUT }}/*.msi" "final-dist/${NAME}-${WEASIS_CLEAN_VERSION}-${ARC_NAME}.msi"
+          ls -la "${{ env.WEASIS_OUTPUT }}"
+          cp "${{ env.WEASIS_OUTPUT }}/${NAME}-${WEASIS_CLEAN_VERSION}.msi" "final-dist/${NAME}-${WEASIS_CLEAN_VERSION}-${ARC_NAME}.msi"
         elif [ "$machine" = "linux" ] ; then
           declare -a installerTypes=("deb" "rpm")
           for installerType in ${installerTypes[@]}; do
