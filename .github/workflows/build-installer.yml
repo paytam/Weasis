@@ -21,7 +21,7 @@ jobs:
         - { os: ubuntu-latest, name: GNU, cc: gcc, cxx: g++, platform: x64, wsystem: linux, warc: x86-64 }
       #  - { os: macos-latest, name: Clang, cc: clang, cxx: clang++, platform: x64, wsystem: macosx, warc: x86-64 }
       #  - { os: windows-latest, name: VS2019, cc: cl, cxx: cl, platform: x32, wsystem: windows, warc: x86 }
-        - { os: windows-latest, name: VS2019, cc: cl, cxx: cl, platform: x64, wsystem: windows, warc: x86-64 }
+      #  - { os: windows-latest, name: VS2019, cc: cl, cxx: cl, platform: x64, wsystem: windows, warc: x86-64 }
     steps:
     - uses: actions/checkout@v2
     - name: Set up JDK 16-ea
@@ -178,10 +178,10 @@ jobs:
         elif [ "$machine" = "linux" ] ; then
           declare -a installerTypes=("deb" "rpm")
           for installerType in ${installerTypes[@]}; do
-            jpackage --type "$installerType" --app-image "${{ env.WEASIS_OUTPUT }}/${{ env.NAME }}" --dest "${{ env.WEASIS_OUTPUT }}" --name "${{ env.NAME }}" --resource-dir "${{ env.RES }}/$installerType" \
+            jpackage --type "${installerType}" --app-image "${{ env.WEASIS_OUTPUT }}/${{ env.NAME }}" --dest "${{ env.WEASIS_OUTPUT }}" --name "${{ env.NAME }}" --resource-dir "${{ env.RES }}/${installerType}" \
             --license-file "${{ env.WEASIS_INPUT }}/Licence.txt" --description "Weasis DICOM viewer" --vendor "${{ env.VENDOR }}" \
             --copyright "${{ env.COPYRIGHT }}" --app-version "${{ env.WEASIS_CLEAN_VERSION }}" --file-associations "${{ env.FILE_ASSOC }}" \
-            --linux-app-release "$REVISON_INC" --linux-package-name "weasis" --linux-deb-maintainer "Nicolas Roduit" --linux-rpm-license-type "EPL-2.0" \
+            --linux-app-release "1" --linux-package-name "weasis" --linux-deb-maintainer "Nicolas Roduit" --linux-rpm-license-type "EPL-2.0" \
             --linux-menu-group "Viewer;MedicalSoftware;Graphics;" --linux-app-category "science" --linux-shortcut --verbose
             cp "${{ env.WEASIS_OUTPUT }}/*.${installerType}" "final-dist"
           done
