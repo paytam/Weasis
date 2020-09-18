@@ -15,6 +15,7 @@ jobs:
       SUBSTANCE_PKG: "3.0.0"  # Package for Java 11 (remove in weasis 4)
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         include:
         - { os: ubuntu-latest, name: GNU, cc: gcc, cxx: g++, platform: x86, wsystem: linux, warc: x86 }
@@ -48,6 +49,7 @@ jobs:
 
     - name: Build with Maven
       run: |
+        export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=128m"
         mvn clean install
         mvn clean install -Dportable=true -P compressXZ -f weasis-distributions
       
