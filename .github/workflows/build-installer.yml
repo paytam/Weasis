@@ -79,8 +79,7 @@ jobs:
     - name: Replace substance by a more recent version for Java 11
       shell: bash
       run: |
-        curl -L -o "${{ env.WEASIS_INPUT }}/substance.jar" "https://raw.github.com/nroduit/mvn-repo/master/org/pushing-pixels/radiance-substance-all/${{ env.
-        }}/radiance-substance-all-${{ env.SUBSTANCE_PKG }}.jar"
+        curl -L -o "${{ env.WEASIS_INPUT }}/substance.jar" "https://raw.github.com/nroduit/mvn-repo/master/org/pushing-pixels/radiance-substance-all/${{ env.SUBSTANCE_PKG }}/radiance-substance-all-${{ env.SUBSTANCE_PKG }}.jar"
         echo "$(ls -la ${{ env.WEASIS_INPUT }})"
         
     - name: Build app binary with jpackage
