@@ -18,7 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - { os: ubuntu-latest, name: GNU, cc: gcc, cxx: g++, platform: x86, wsystem: linux, warc: x86 }
+      #  - { os: ubuntu-latest, name: GNU, cc: gcc, cxx: g++, platform: x86, wsystem: linux, warc: x86 }
       #  - { os: ubuntu-latest, name: GNU, cc: gcc, cxx: g++, platform: x64, wsystem: linux, warc: x86-64 }
       #  - { os: macos-latest, name: Clang, cc: clang, cxx: clang++, platform: x64, wsystem: macosx, warc: x86-64 }
         - { os: windows-latest, name: VS2019, cc: cl, cxx: cl, platform: x86, wsystem: windows, warc: x86 }
@@ -48,12 +48,9 @@ jobs:
     #      ${{ runner.os }}-weasis-
 
     - name: Build with Maven
+      shell: bash
       run: |
-        if [ "${{ matrix.wsystem }}" == "windows" ] ; then
-          set MAVEN_OPTS=-Xmx1024m
-        else
-          export MAVEN_OPTS="-Xmx1024m"
-        fi
+        export MAVEN_OPTS="-Xmx1024m"
         mvn clean install
         mvn clean install -Dportable=true -P compressXZ -f weasis-distributions
       
