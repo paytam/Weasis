@@ -49,7 +49,11 @@ jobs:
 
     - name: Build with Maven
       run: |
-        export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=128m"
+        if [ "${{ matrix.wsystem }}" == "windows" ] ; then
+          set MAVEN_OPTS=-Xmx1024m
+        else
+          export MAVEN_OPTS="-Xmx1024m"
+        fi
         mvn clean install
         mvn clean install -Dportable=true -P compressXZ -f weasis-distributions
       
@@ -92,7 +96,7 @@ jobs:
       run: |
         if [ "${{ matrix.wsystem }}" == "windows" ] ; then
           # Bug on Windows with splash screen
-          JVM_ARGS="${{ env.JVM_ARGS }}"
+          JVM_ARGS="-splash:\$APPDIR\resources\images\about-round.png ${{ env.JVM_ARGS }}"
         else
           JVM_ARGS="-splash:\$APPDIR/resources/images/about-round.png ${{ env.JVM_ARGS }}"
         fi
