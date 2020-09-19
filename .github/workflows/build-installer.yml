@@ -71,14 +71,19 @@ jobs:
       #  - { os: macos-latest, name: Clang, cc: clang, cxx: clang++, platform: x64, wsystem: macosx, warc: x86-64 }
       #  - { os: windows-latest, name: VS2019, cc: cl, cxx: cl, platform: x86, wsystem: windows, warc: x86 }
       # - { os: windows-latest, name: VS2019, cc: cl, cxx: cl, platform: x64, wsystem: windows, warc: x86-64 }
+    
     steps:
-    - name: Partial Clone
+    - name: Set output version from build
       shell: bash
       run: |
         echo ${{needs.build.outputs.version}}
         echo ${{needs.build.outputs.cleanversion}}
         echo ::set-env name=WEASIS_VERSION::${{needs.build.outputs.version}}
         echo ::set-env name=WEASIS_CLEAN_VERSION::${{needs.build.outputs.cleanversion}}
+          
+    - name: Git clone of weasis-distributions/script
+      shell: bash
+      run: |
         REPO="https://${GITHUB_ACTOR}:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git"
         git config --global user.email github-actions@github.com
         git config --global user.name github-actions
@@ -86,7 +91,6 @@ jobs:
         git sparse-checkout init --cone
         git sparse-checkout set "weasis-distributions/script"
         git checkout
-        echo "$(ls -la weasis-distributions/script)"
 
     - name: Set up JDK for jpackage
       uses: actions/setup-java@v1
@@ -218,6 +222,13 @@ jobs:
           --vendor "${{ env.VENDOR }}" --file-associations "${{ env.FILE_ASSOC }}" --verbose
           cp ${{ env.WEASIS_OUTPUT }}/*.msi final-dist/${{ env.NAME }}-${{ env.WEASIS_CLEAN_VERSION }}-${ARC_NAME}.msi
         elif [ "$machine" = "linux" ] ; then
+          if [ "${ARC_NAME}" = "x86" ] ; then
+            # Required lib32z1 libc6-i386 xdg-utils
+            sudo dpkg --add-architecture i386
+            sudo apt-get update -y -qq
+            sudo apt-get install -y -qq devscripts gcc-i686-linux-gnu lib32z1 libc6-i386 xdg-utils
+            debuild -a i386
+          fi
           declare -a installerTypes=("deb" "rpm")
           for installerType in ${installerTypes[@]}; do
             jpackage --type "${installerType}" --app-image "${{ env.WEASIS_OUTPUT }}/${{ env.NAME }}" --dest "${{ env.WEASIS_OUTPUT }}" --name "${{ env.NAME }}" --resource-dir "${{ env.RES }}/${installerType}" \
