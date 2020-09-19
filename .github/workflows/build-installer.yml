@@ -235,12 +235,14 @@ jobs:
               command dpkg2 "$@"
             fi
             EOF
+            
             DPKGDIR=$(dirname -- "$(which dpkg)")
             dpkg --print-architecture
             sudo mv ${DPKGDIR}/dpkg ${DPKGDIR}/dpkg2
             sudo cp dpkg.bash ${DPKGDIR}/dpkg
             sudo chmod --reference=${DPKGDIR}/dpkg2 ${DPKGDIR}/dpkg
             dpkg --print-architecture
+            
             cat  << 'EOF' > rpmbuild.bash
             #!/bin/bash
             if [ "$1" = "--eval=%{_target_cpu}" ] ; then
@@ -249,6 +251,7 @@ jobs:
               command rpmbuild2 "$@"
             fi
             EOF
+            
             RPMDIR=$(dirname -- "$(which rpmbuild)")
             rpmbuild --eval=%{_target_cpu}
             sudo mv ${RPMDIR}/rpmbuild ${RPMDIR}/rpmbuild2
