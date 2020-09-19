@@ -4,33 +4,15 @@ on:
 
 jobs:
   build:
-    env:
-      JDK_MODULES: "java.base,java.compiler,java.datatransfer,java.desktop,java.logging,java.management,java.prefs,java.xml,jdk.localedata,jdk.charsets,jdk.crypto.ec,jdk.crypto.cryptoki,jdk.unsupported,jdk.jdwp.agent"
-      NAME: "Weasis"
-      IDENTIFIER: "org.weasis.viewer"
-      JVM_ARGS: "-Dgosh.port=17179"
-      WEASIS_INPUT: "weasis-distributions/target/portable-dist/weasis-portable"
-      WEASIS_OUTPUT: "weasis-distributions/target/native-dist"
-      WEASIS_INPUT_BIN: "weasis-distributions/target/portable-dist/weasis-portable/weasis"
-      SUBSTANCE_PKG: "3.0.0"  # Package for Java 11 (remove in weasis 4)
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-      #  - { os: ubuntu-latest, name: GNU, cc: gcc, cxx: g++, platform: x86, wsystem: linux, warc: x86 }
-      #  - { os: ubuntu-latest, name: GNU, cc: gcc, cxx: g++, platform: x64, wsystem: linux, warc: x86-64 }
-      #  - { os: macos-latest, name: Clang, cc: clang, cxx: clang++, platform: x64, wsystem: macosx, warc: x86-64 }
-        - { os: windows-latest, name: VS2019, cc: cl, cxx: cl, platform: x86, wsystem: windows, warc: x86 }
-      # - { os: windows-latest, name: VS2019, cc: cl, cxx: cl, platform: x64, wsystem: windows, warc: x86-64 }
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+      
     - name: Set up JDK 16-ea
       uses: actions/setup-java@v1
       with:
-        java-version: 16.0.0-ea.14
-        architecture: ${{ matrix.platform }}
-    
+        java-version: 15.0.0
+  
     - name: Cache local Maven repository
       uses: actions/cache@v2
       with:
@@ -39,18 +21,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-maven-
           
-    #- name: Cache weasis-portable
-    #  uses: actions/cache@v2
-    #  with:
-    #    path: ${{ env.WEASIS_INPUT }}
-    #    key: ${{ runner.os }}-weasis-${{ hashFiles('**/*.xz') }}
-    #    restore-keys: |
-    #      ${{ runner.os }}-weasis-
-
     - name: Build with Maven
       shell: bash
       run: |
-        export MAVEN_OPTS="-Xmx1024m"
         mvn clean install
         mvn clean install -Dportable=true -P compressXZ -f weasis-distributions
       
@@ -61,6 +34,59 @@ jobs:
     - name: Set compatible version
       shell: bash
       run: echo ::set-env name=WEASIS_CLEAN_VERSION::$(echo $WEASIS_VERSION | sed -e 's/"//g' -e 's/-.*//')
+
+    - name: Upload weasis portable distribution
+      uses: actions/upload-artifact@v2
+      with:
+        name: weasis-portable-${{ env.WEASIS_VERSION }}
+        path: weasis-distributions/target/portable-dist/weasis-portable.zip
+
+  jpackage:
+    env:
+      JDK_MODULES: "java.base,java.compiler,java.datatransfer,java.desktop,java.logging,java.management,java.prefs,java.xml,jdk.localedata,jdk.charsets,jdk.crypto.ec,jdk.crypto.cryptoki,jdk.unsupported,jdk.jdwp.agent"
+      NAME: "Weasis"
+      IDENTIFIER: "org.weasis.viewer"
+      JVM_ARGS: "-Dgosh.port=17179"
+      WEASIS_INPUT: "weasis-distributions/target/portable-dist/weasis-portable"
+      WEASIS_OUTPUT: "weasis-distributions/target/native-dist"
+      WEASIS_INPUT_BIN: "weasis-distributions/target/portable-dist/weasis-portable/weasis"
+      SUBSTANCE_PKG: "3.0.0"  # Package for Java 11 (remove in weasis 4)
+    runs-on: ${{ matrix.os }}
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - { os: ubuntu-latest, name: GNU, cc: gcc, cxx: g++, platform: x86, wsystem: linux, warc: x86 }
+      #  - { os: ubuntu-latest, name: GNU, cc: gcc, cxx: g++, platform: x64, wsystem: linux, warc: x86-64 }
+      #  - { os: macos-latest, name: Clang, cc: clang, cxx: clang++, platform: x64, wsystem: macosx, warc: x86-64 }
+        - { os: windows-latest, name: VS2019, cc: cl, cxx: cl, platform: x86, wsystem: windows, warc: x86 }
+      # - { os: windows-latest, name: VS2019, cc: cl, cxx: cl, platform: x64, wsystem: windows, warc: x86-64 }
+    steps:
+    - name: Partial Clone
+      shell: bash
+      run: |
+        echo ::set-env name=WEASIS_VERSION::$(echo ${{ needs.build.env.WEASIS_VERSION }})
+        echo ::set-env name=WEASIS_CLEAN_VERSION::$(echo ${{ needs.build.env.WEASIS_CLEAN_VERSION }})
+        REPO="https://${GITHUB_ACTOR}:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git"
+        git config --global user.email github-actions@github.com
+        git config --global user.name github-actions
+        git clone --filter=blob:none --no-checkout --depth 1  --sparse $REPO .
+        git sparse-checkout init --cone
+        git sparse-checkout set "weasis-distributions/script"
+        git checkout
+
+    - name: Set up JDK 16-ea
+      uses: actions/setup-java@v1
+      with:
+        java-version: 16.0.0-ea.14
+        architecture: ${{ matrix.platform }}
+
+    - name: Download weasis-portable
+      uses: actions/download-artifact@v2
+      with:
+        name: weasis-portable-${{ env.WEASIS_VERSION }}
+        path: weasis-distributions/target/portable-dist
 
     - name: Unzip portable version
       shell: bash
