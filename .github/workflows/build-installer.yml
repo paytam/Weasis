@@ -8,7 +8,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       
-    - name: Set up JDK 16-ea
+    - name: Set up JDK for compilation
       uses: actions/setup-java@v1
       with:
         java-version: 15.0.0
@@ -60,14 +60,13 @@ jobs:
         - { os: ubuntu-latest, name: GNU, cc: gcc, cxx: g++, platform: x86, wsystem: linux, warc: x86 }
       #  - { os: ubuntu-latest, name: GNU, cc: gcc, cxx: g++, platform: x64, wsystem: linux, warc: x86-64 }
       #  - { os: macos-latest, name: Clang, cc: clang, cxx: clang++, platform: x64, wsystem: macosx, warc: x86-64 }
-        - { os: windows-latest, name: VS2019, cc: cl, cxx: cl, platform: x86, wsystem: windows, warc: x86 }
+      #  - { os: windows-latest, name: VS2019, cc: cl, cxx: cl, platform: x86, wsystem: windows, warc: x86 }
       # - { os: windows-latest, name: VS2019, cc: cl, cxx: cl, platform: x64, wsystem: windows, warc: x86-64 }
     steps:
     - name: Partial Clone
       shell: bash
       run: |
-        echo ::set-env name=WEASIS_VERSION::$(echo ${{ needs.build.env.WEASIS_VERSION }})
-        echo ::set-env name=WEASIS_CLEAN_VERSION::$(echo ${{ needs.build.env.WEASIS_CLEAN_VERSION }})
+        echo ${{ env.WEASIS_CLEAN_VERSION }}
         REPO="https://${GITHUB_ACTOR}:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git"
         git config --global user.email github-actions@github.com
         git config --global user.name github-actions
@@ -75,6 +74,7 @@ jobs:
         git sparse-checkout init --cone
         git sparse-checkout set "weasis-distributions/script"
         git checkout
+        echo "$(ls -la weasis-distributions/script)"
 
     - name: Set up JDK 16-ea
       uses: actions/setup-java@v1
