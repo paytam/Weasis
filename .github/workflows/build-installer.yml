@@ -128,7 +128,7 @@ jobs:
         if [ "$1" = "--eval=%{_target_cpu}" ] ; then
           command echo "i386"
         else
-          command rpmbuild2 "$@"
+          command rpmbuild2 "--target i386 $@"
         fi
         EOF
         
