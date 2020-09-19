@@ -223,11 +223,18 @@ jobs:
           cp ${{ env.WEASIS_OUTPUT }}/*.msi final-dist/${{ env.NAME }}-${{ env.WEASIS_CLEAN_VERSION }}-${ARC_NAME}.msi
         elif [ "$machine" = "linux" ] ; then
           if [ "${ARC_NAME}" = "x86" ] ; then
-            # Required lib32z1 libc6-i386 xdg-utils
             sudo dpkg --add-architecture i386
             sudo apt-get update -y -qq
             sudo apt-get install -y -qq devscripts gcc-i686-linux-gnu lib32z1 libc6-i386 xdg-utils
             export LD_LIBRARY_PATH="/usr/lib/i386-linux-gnu"
+            function dpkg() { 
+            if [ "$1" = "--print-architecture" ] ; then
+              command echo "i386"
+            else
+              echo "$@"
+              command dpkg "$@"
+            fi
+            }
           fi
           declare -a installerTypes=("deb" "rpm")
           for installerType in ${installerTypes[@]}; do
