@@ -104,6 +104,41 @@ jobs:
         name: weasis-portable-${{ env.WEASIS_VERSION }}
         path: weasis-distributions/target/portable-dist
 
+    - name: Adapt linux-i386 architecture
+      if: ${{ [[ "${{ matrix.wsystem }}-${{ matrix.warc }}" = "linux-x86" ]] }}
+      shell: bash
+      run: |
+        cat  << 'EOF' > dpkg.bash
+        #!/bin/bash
+        if [ "$1" = "--print-architecture" ] ; then
+          command echo "i386"
+        else
+          command dpkg2 "$@"
+        fi
+        EOF
+        
+        DPKGDIR=$(dirname -- "$(which dpkg)")
+        dpkg --print-architecture
+        sudo mv ${DPKGDIR}/dpkg ${DPKGDIR}/dpkg2
+        sudo cp dpkg.bash ${DPKGDIR}/dpkg
+        sudo chmod --reference=${DPKGDIR}/dpkg2 ${DPKGDIR}/dpkg
+        dpkg --print-architecture
+        cat  << 'EOF' > rpmbuild.bash
+        #!/bin/bash
+        if [ "$1" = "--eval=%{_target_cpu}" ] ; then
+          command echo "i386"
+        else
+          command rpmbuild2 "$@"
+        fi
+        EOF
+        
+        RPMDIR=$(dirname -- "$(which rpmbuild)")
+        rpmbuild --eval=%{_target_cpu}
+        sudo mv ${RPMDIR}/rpmbuild ${RPMDIR}/rpmbuild2
+        sudo cp rpmbuild.bash ${RPMDIR}/rpmbuild
+        sudo chmod --reference=${RPMDIR}/rpmbuild2 ${RPMDIR}/rpmbuild
+        rpmbuild --eval=%{_target_cpu}
+        
     - name: Unzip portable version
       shell: bash
       run: |
@@ -226,38 +261,6 @@ jobs:
             sudo dpkg --add-architecture i386
             sudo apt-get update -y -qq
             sudo apt-get install -y -qq devscripts lib32z1 libc6-i386 xdg-utils
-
-            cat  << 'EOF' > dpkg.bash
-            #!/bin/bash
-            if [ "$1" = "--print-architecture" ] ; then
-              command echo "i386"
-            else
-              command dpkg2 "$@"
-            fi
-            EOF
-            
-            DPKGDIR=$(dirname -- "$(which dpkg)")
-            dpkg --print-architecture
-            sudo mv ${DPKGDIR}/dpkg ${DPKGDIR}/dpkg2
-            sudo cp dpkg.bash ${DPKGDIR}/dpkg
-            sudo chmod --reference=${DPKGDIR}/dpkg2 ${DPKGDIR}/dpkg
-            dpkg --print-architecture
-            
-            cat  << 'EOF' > rpmbuild.bash
-            #!/bin/bash
-            if [ "$1" = "--eval=%{_target_cpu}" ] ; then
-              command echo "i386"
-            else
-              command rpmbuild2 "$@"
-            fi
-            EOF
-            
-            RPMDIR=$(dirname -- "$(which rpmbuild)")
-            rpmbuild --eval=%{_target_cpu}
-            sudo mv ${RPMDIR}/rpmbuild ${RPMDIR}/rpmbuild2
-            sudo cp rpmbuild.bash ${RPMDIR}/rpmbuild
-            sudo chmod --reference=${RPMDIR}/rpmbuild2 ${RPMDIR}/rpmbuild
-            rpmbuild --eval=%{_target_cpu}
           fi
           declare -a installerTypes=("deb" "rpm")
           for installerType in ${installerTypes[@]}; do
