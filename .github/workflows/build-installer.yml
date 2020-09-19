@@ -5,6 +5,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.stepversion.outputs.version }}
+      cleanversion: ${{ steps.stepcleanversion.outputs.version }}
+
     steps:
     - uses: actions/checkout@v2
       
@@ -34,6 +38,11 @@ jobs:
     - name: Set compatible version
       shell: bash
       run: echo ::set-env name=WEASIS_CLEAN_VERSION::$(echo $WEASIS_VERSION | sed -e 's/"//g' -e 's/-.*//')
+      
+    - id: stepversion
+      run: echo ::set-output name=version::${{ env.WEASIS_VERSION }}
+    - id: stepcleanversion
+      run: echo ::set-output name=version::${{ env.WEASIS_CLEAN_VERSION }}      
 
     - name: Upload weasis portable distribution
       uses: actions/upload-artifact@v2
@@ -66,7 +75,10 @@ jobs:
     - name: Partial Clone
       shell: bash
       run: |
-        echo ${{ env.WEASIS_CLEAN_VERSION }}
+        echo ${{needs.build.outputs.version}}
+        echo ${{needs.build.outputs.cleanversion}}
+        echo ::set-env name=WEASIS_VERSION::${{needs.build.outputs.version}}
+        echo ::set-env name=WEASIS_CLEAN_VERSION::${{needs.build.outputs.cleanversion}}
         REPO="https://${GITHUB_ACTOR}:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git"
         git config --global user.email github-actions@github.com
         git config --global user.name github-actions
@@ -76,7 +88,7 @@ jobs:
         git checkout
         echo "$(ls -la weasis-distributions/script)"
 
-    - name: Set up JDK 16-ea
+    - name: Set up JDK for jpackage
       uses: actions/setup-java@v1
       with:
         java-version: 16.0.0-ea.14
