@@ -227,7 +227,8 @@ jobs:
             sudo dpkg --add-architecture i386
             sudo apt-get update -y -qq
             sudo apt-get install -y -qq devscripts gcc-i686-linux-gnu lib32z1 libc6-i386 xdg-utils
-            debuild -a i386
+            sudo ln -s packages/debian debian
+            sudo debuild -a i386
           fi
           declare -a installerTypes=("deb" "rpm")
           for installerType in ${installerTypes[@]}; do
