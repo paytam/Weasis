@@ -108,6 +108,8 @@ jobs:
       if: ${{ matrix.wsystem }}-${{ matrix.warc }} == "linux-x86"
       shell: bash
       run: |
+        sudo dpkg --add-architecture i386
+        sudo apt-get update -y -qq
         cat  << 'EOF' > dpkg.bash
         #!/bin/bash
         if [ "$1" = "--print-architecture" ] ; then
@@ -123,21 +125,6 @@ jobs:
         sudo cp dpkg.bash ${DPKGDIR}/dpkg
         sudo chmod --reference=${DPKGDIR}/dpkg2 ${DPKGDIR}/dpkg
         dpkg --print-architecture
-        cat  << 'EOF' > rpmbuild.bash
-        #!/bin/bash
-        if [ "$1" = "--eval=%{_target_cpu}" ] ; then
-          command echo "i386"
-        else
-          command rpmbuild2 --target i386 "$@"
-        fi
-        EOF
-        
-        RPMDIR=$(dirname -- "$(which rpmbuild)")
-        rpmbuild --eval=%{_target_cpu}
-        sudo mv ${RPMDIR}/rpmbuild ${RPMDIR}/rpmbuild2
-        sudo cp rpmbuild.bash ${RPMDIR}/rpmbuild
-        sudo chmod --reference=${RPMDIR}/rpmbuild2 ${RPMDIR}/rpmbuild
-        rpmbuild --eval=%{_target_cpu}
         
     - name: Unzip portable version
       shell: bash
@@ -258,11 +245,10 @@ jobs:
           cp ${{ env.WEASIS_OUTPUT }}/*.msi final-dist/${{ env.NAME }}-${{ env.WEASIS_CLEAN_VERSION }}-${ARC_NAME}.msi
         elif [ "$machine" = "linux" ] ; then
           if [ "${ARC_NAME}" = "x86" ] ; then
-            sudo dpkg --add-architecture i386
-            sudo apt-get update -y -qq
-            sudo apt-get install -y -qq devscripts lib32z1 libc6-i386 xdg-utils
+            declare -a installerTypes=("deb")
+          else
+            declare -a installerTypes=("deb" "rpm")
           fi
-          declare -a installerTypes=("deb" "rpm")
           for installerType in ${installerTypes[@]}; do
             jpackage --type "${installerType}" --app-image "${{ env.WEASIS_OUTPUT }}/${{ env.NAME }}" --dest "${{ env.WEASIS_OUTPUT }}" --name "${{ env.NAME }}" --resource-dir "${{ env.RES }}/${installerType}" \
             --license-file "${{ env.WEASIS_INPUT }}/Licence.txt" --description "Weasis DICOM viewer" --vendor "${{ env.VENDOR }}" \
