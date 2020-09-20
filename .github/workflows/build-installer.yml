@@ -103,7 +103,15 @@ jobs:
       with:
         name: weasis-portable-${{ env.WEASIS_VERSION }}
         path: weasis-distributions/target/portable-dist
-
+ 
+    - name: Adapt windows 32-bit msi
+      if: matrix.wsystem == 'windows' && matrix.warc == 'x86'
+      shell: bash
+      run: |
+        WIXDIR="C:\Program Files (x86)\WiX Toolset v3.11\bin"
+        sudo mv ${WIXDIR}/candle.exe ${WIXDIR}/candle2.exe
+        sudo cp weasis-distributions/script/resources/windows/msi/candle.exe ${WIXDIR}/candle.exe
+        
     - name: Adapt linux-i386 architecture
       if: matrix.wsystem == 'linux' && matrix.warc == 'x86'
       shell: bash
@@ -267,7 +275,6 @@ jobs:
         
     - name: Upload the final opencv binary
       uses: actions/upload-artifact@v2
-      if: succeeded() || failed()
       with:
         name: ${{ env.APP_ARTIFACT }}
         path: final-dist
