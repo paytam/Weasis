@@ -267,6 +267,7 @@ jobs:
         
     - name: Upload the final opencv binary
       uses: actions/upload-artifact@v2
+      if: succeeded() || failed()
       with:
         name: ${{ env.APP_ARTIFACT }}
         path: final-dist
