@@ -105,7 +105,7 @@ jobs:
         path: weasis-distributions/target/portable-dist
 
     - name: Adapt linux-i386 architecture
-      if: ${{ matrix.wsystem }}-${{ matrix.warc }} == "linux-x86"
+      if: matrix.wsystem == 'linux' && matrix.warc == 'x86'
       shell: bash
       run: |
         sudo dpkg --add-architecture i386
