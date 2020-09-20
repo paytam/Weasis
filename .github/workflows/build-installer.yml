@@ -108,8 +108,7 @@ jobs:
       if: matrix.wsystem == 'windows' && matrix.warc == 'x86'
       shell: bash
       run: |
-        WIXDIR="C:\Program Files (x86)\WiX Toolset v3.11\bin"
-        cd ${WIXDIR}
+        cd "C:\Program Files (x86)\WiX Toolset v3.11\bin"
         mv candle.exe candle2.exe
         cp ${{ github.workspace }}/weasis-distributions/script/resources/windows/msi/candle.exe candle.exe
         
