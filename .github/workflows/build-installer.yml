@@ -109,8 +109,9 @@ jobs:
       shell: bash
       run: |
         WIXDIR="C:\Program Files (x86)\WiX Toolset v3.11\bin"
-        mv ${WIXDIR}/candle.exe ${WIXDIR}/candle2.exe
-        cp weasis-distributions/script/resources/windows/msi/candle.exe ${WIXDIR}/candle.exe
+        cd ${WIXDIR}
+        mv candle.exe candle2.exe
+        cp ${{ github.workspace }}/weasis-distributions/script/resources/windows/msi/candle.exe candle.exe
         
     - name: Adapt linux-i386 architecture
       if: matrix.wsystem == 'linux' && matrix.warc == 'x86'
