@@ -109,9 +109,9 @@ jobs:
       shell: bash
       run: |
         mv "C:\Program Files (x86)\WiX Toolset v3.11\bin\candle.exe" "C:\Program Files (x86)\WiX Toolset v3.11\bin\candle2.exe"
-        ls -la
-        ls -la weasis-distributions/script
-        cp "weasis-distributions/script/resources/windows/msi/candle.exe" "C:\Program Files (x86)\WiX Toolset v3.11\bin\candle.exe"
+        ls -la weasis-distributions/script/resources/windows/msi
+        cp "weasis-distributions/script/resources/windows/msi/candle.exe" "C:\Program Files (x86)\WiX Toolset v3.11\bin\"
+        cp "weasis-distributions/script/resources/windows/msi/can"* "C:\Program Files (x86)\WiX Toolset v3.11\bin\"
         
     - name: Adapt linux-i386 architecture
       if: matrix.wsystem == 'linux' && matrix.warc == 'x86'
