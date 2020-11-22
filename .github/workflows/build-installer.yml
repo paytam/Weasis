@@ -95,7 +95,7 @@ jobs:
     - name: Set up JDK for jpackage
       uses: actions/setup-java@v1
       with:
-        java-version: 16.0.0-ea.14
+        java-version: 16.0.0-ea.24
         architecture: ${{ matrix.platform }}
 
     - name: Download weasis-portable
@@ -111,7 +111,7 @@ jobs:
         mv "C:\Program Files (x86)\WiX Toolset v3.11\bin\candle.exe" "C:\Program Files (x86)\WiX Toolset v3.11\bin\candle2.exe"
         ls -la weasis-distributions/script/resources/windows/msi
         cp "weasis-distributions/script/resources/windows/msi/candle.exe" "C:\Program Files (x86)\WiX Toolset v3.11\bin\"
-        cp "weasis-distributions/script/resources/windows/msi/can"* "C:\Program Files (x86)\WiX Toolset v3.11\bin\"
+        ls -la "C:\Program Files (x86)\WiX Toolset v3.11\bin\"
         
     - name: Adapt linux-i386 architecture
       if: matrix.wsystem == 'linux' && matrix.warc == 'x86'
