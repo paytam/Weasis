@@ -82,8 +82,8 @@ jobs:
       run: |
         echo ${{needs.build.outputs.version}}
         echo ${{needs.build.outputs.cleanversion}}
-        echo ::set-env name=WEASIS_VERSION::${{needs.build.outputs.version}}
-        echo ::set-env name=WEASIS_CLEAN_VERSION::${{needs.build.outputs.cleanversion}}
+        echo "WEASIS_VERSION=${{needs.build.outputs.version}}" >> $GITHUB_ENV
+        echo "WEASIS_CLEAN_VERSION=${{needs.build.outputs.cleanversion}}" >> $GITHUB_ENV
           
     - name: Git clone of weasis-distributions/script
       shell: bash
@@ -276,7 +276,7 @@ jobs:
           --mac-signing-key-user-name "$CERTIFICATE" --verbose "$MAC_SIGN"
           cp ${{ env.WEASIS_OUTPUT }}/*.pkg final-dist
         fi
-        echo ::set-env name=APP_ARTIFACT::weassis-${machine}-${ARC_NAME}-${{ env.WEASIS_CLEAN_VERSION }}
+        echo "APP_ARTIFACT=weassis-${machine}-${ARC_NAME}-${{ env.WEASIS_CLEAN_VERSION }}" >> $GITHUB_ENV
         
     - name: Upload the final opencv binary
       uses: actions/upload-artifact@v2
