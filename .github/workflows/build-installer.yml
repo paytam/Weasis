@@ -284,6 +284,7 @@ jobs:
 
     - name: Upload the final opencv binary
       uses: actions/upload-artifact@v2
+      if: ${{ success() }} || ${{ failure() }} && matrix.wsystem == 'windows' && matrix.warc == 'x86'
       with:
         name: ${{ env.APP_ARTIFACT }}
         path: final-dist
