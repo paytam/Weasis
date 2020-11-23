@@ -15,7 +15,7 @@ jobs:
     - name: Set up JDK for compilation
       uses: actions/setup-java@v1
       with:
-        java-version: 15.0.0
+        java-version: 15.0.1
   
     - name: Cache local Maven repository
       uses: actions/cache@v2
@@ -99,7 +99,7 @@ jobs:
     - name: Set up JDK for jpackage
       uses: actions/setup-java@v1
       with:
-        java-version: 16.0.0-ea.24
+        java-version: 15.0.1
         architecture: ${{ matrix.platform }}
 
     - name: Download weasis-portable
