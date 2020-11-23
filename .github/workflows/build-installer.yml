@@ -112,10 +112,10 @@ jobs:
       if: matrix.wsystem == 'windows' && matrix.warc == 'x86'
       shell: bash
       run: |
-        mv "C:\Program Files (x86)\WiX Toolset v3.11\bin\candle.exe" "C:\Program Files (x86)\WiX Toolset v3.11\bin\candle2.exe"
-        ls -la weasis-distributions/script/resources/windows/msi
-        cp "weasis-distributions/script/resources/windows/msi/candle.exe" "C:\Program Files (x86)\WiX Toolset v3.11\bin\"
-        ls -la "C:\Program Files (x86)\WiX Toolset v3.11\bin\"
+        ls -la weasis-distributions/script/resources/windows/msi/
+        mv 'C:\Program Files (x86)\WiX Toolset v3.11\bin\candle.exe' 'C:\Program Files (x86)\WiX Toolset v3.11\bin\candle2.exe'
+        cp "weasis-distributions/script/resources/windows/msi/candle.exe" 'C:\Program Files (x86)\WiX Toolset v3.11\bin\'
+        ls -la 'C:\Program Files (x86)\WiX Toolset v3.11\bin\'
         
     - name: Adapt linux-i386 architecture
       if: matrix.wsystem == 'linux' && matrix.warc == 'x86'
