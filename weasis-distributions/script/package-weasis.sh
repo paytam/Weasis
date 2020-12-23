@@ -109,6 +109,9 @@ done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
 RES="resources/$machine"
+curPath=$(dirname "$(readlink -f "$0")")
+rootdir="$(dirname "$curPath")"
+rootdir="$(dirname "$rootdir")"
 
 if [ "$machine" = "windows" ] ; then
   INPUT_PATH_UNIX=$(cygpath -u "$INPUT_PATH")
