@@ -214,7 +214,7 @@ jobs:
 
         jpackage --type app-image --input "${{ env.WEASIS_INPUT_BIN }}" --dest "${{ env.WEASIS_OUTPUT }}" --name "${{ env.NAME }}" \
         --main-jar weasis-launcher.jar --main-class org.weasis.launcher.AppLauncher --add-modules "${{ env.JDK_MODULES }}" \
-        --resource-dir "${{ env.RES }}" --app-version "${{ env.WEASIS_CLEAN_VERSION }}" --add-launcher "Dicomizer=$RES/dicomizer-launcher.properties" \
+        --resource-dir "${{ env.RES }}" --app-version "${{ env.WEASIS_CLEAN_VERSION }}" --add-launcher "Dicomizer=${{ env.RES }}/dicomizer-launcher.properties" \
         --verbose "${signArgs[@]}" "${customOptions[@]}" "${commonOptions[@]}"
 
         echo "$(ls -la ${{ env.WEASIS_OUTPUT }}/${{ env.NAME }})"
@@ -244,7 +244,7 @@ jobs:
             declare -a installerTypes=("deb" "rpm")
           fi
           for installerType in ${installerTypes[@]}; do
-            jpackage --type "${installerType}" --app-image "${{ env.WEASIS_OUTPUT }}/${{ env.NAME }}" --dest "${{ env.WEASIS_OUTPUT }}" --name "${{ env.NAME }}" --resource-dir "${{ env.RES }}/${installerType}" \
+            jpackage --type "${installerType}" --app-image "${{ env.WEASIS_OUTPUT }}/${{ env.NAME }}" --dest "${{ env.WEASIS_OUTPUT }}" --name "${{ env.NAME }}" --resource-dir "${{ env.RES }}" \
             --license-file "${{ env.WEASIS_INPUT }}/Licence.txt" --description "Weasis DICOM viewer" --vendor "${{ env.VENDOR }}" \
             --copyright "${{ env.COPYRIGHT }}" --app-version "${{ env.WEASIS_CLEAN_VERSION }}" --file-associations "${{ env.FILE_ASSOC }}" \
             --linux-app-release "1" --linux-package-name "weasis" --linux-deb-maintainer "Nicolas Roduit" --linux-rpm-license-type "EPL-2.0" \
