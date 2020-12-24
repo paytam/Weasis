@@ -164,6 +164,7 @@ jobs:
         echo "$(ls ${{ env.WEASIS_INPUT_BIN }}/bundle/)"
 
     - name: Replace substance by a more recent version for Java 11
+      # Should be removed in Weasis 4
       shell: bash
       run: |
         curl -L -o "${{ env.WEASIS_INPUT }}/substance.jar" "https://raw.github.com/nroduit/mvn-repo/master/org/pushing-pixels/radiance-substance-all/${{ env.SUBSTANCE_PKG }}/radiance-substance-all-${{ env.SUBSTANCE_PKG }}.jar"
@@ -193,7 +194,7 @@ jobs:
       run: |
         machine=${{ matrix.wsystem }}
         if [ "$machine" = "macosx" ] ; then
-          declare -a customOptions=("--java-options" "-splash:\$APPDIR/resources/images/about-round.png" )
+          declare -a customOptions=("--java-options" "-splash:\$APPDIR/resources/images/about-round.png" "--java-options" "-Dapple.laf.useScreenMenuBar=true")
           declare -a signArgs=("--mac-package-identifier" "${{ env.IDENTIFIER }}" "--mac-signing-keychain" "$HOME/Library/Keychains/signing_temp.keychain-db" "--mac-sign")
         elif [ "$machine" = "windows" ] ; then
           declare -a customOptions=("--java-options" "-splash:\$APPDIR\resources\images\about-round.png" )
@@ -213,37 +214,10 @@ jobs:
 
         jpackage --type app-image --input "${{ env.WEASIS_INPUT_BIN }}" --dest "${{ env.WEASIS_OUTPUT }}" --name "${{ env.NAME }}" \
         --main-jar weasis-launcher.jar --main-class org.weasis.launcher.AppLauncher --add-modules "${{ env.JDK_MODULES }}" \
-        --resource-dir "${{ env.RES }}" --java-options "${JVM_ARGS}" --app-version "${{ env.WEASIS_CLEAN_VERSION }}" \
+        --resource-dir "${{ env.RES }}" --app-version "${{ env.WEASIS_CLEAN_VERSION }}" --add-launcher "Dicomizer=$RES/dicomizer-launcher.properties" \
         --verbose "${signArgs[@]}" "${customOptions[@]}" "${commonOptions[@]}"
 
         echo "$(ls -la ${{ env.WEASIS_OUTPUT }}/${{ env.NAME }})"
-
-    - name: Adapt launching options
-      shell: bash
-      env:
-        RES: "weasis-distributions/script/resources/${{ matrix.wsystem }}"
-      run: |
-        machine=${{ matrix.wsystem }}
-        if [ "$machine" = "macosx" ] ; then
-          OUT_APP="${{ env.WEASIS_OUTPUT }}/${{ env.NAME }}.app/Contents/app"
-        elif [ "$machine" = "windows" ] ; then
-          OUT_APP="${{ env.WEASIS_OUTPUT }}/${{ env.NAME }}/app"         
-        else
-          OUT_APP="${{ env.WEASIS_OUTPUT }}/${{ env.NAME }}/lib/app"
-        fi
-
-        if [ "$machine" = "linux" ] ; then
-          cp "${{ env.RES }}/Dicomizer.desktop" "${{ env.WEASIS_OUTPUT }}/${{ env.NAME }}/lib/weasis-Dicomizer.desktop"
-        elif [ "$machine" = "windows" ] ; then
-          # Fix icon of second launcher
-          cp "${{ env.RES }}/Dicomizer.ico" "${{ env.WEASIS_OUTPUT }}/${{ env.NAME }}/Dicomizer.ico"
-        elif [ "$machine" = "macosx" ] ; then
-          # Resign
-          cp -Rf "${{ env.RES }}/weasis-uri-handler.app" "${{ env.WEASIS_OUTPUT }}/${{ env.NAME }}.app/Contents/MacOS/"
-          cp -Rf "${{ env.RES }}/Dicomizer.app" "${{ env.WEASIS_OUTPUT }}/${{ env.NAME }}.app/Contents/MacOS/"
-        fi
-
-        cat "$OUT_APP/${{ env.NAME }}.cfg"
 
     - name: Build package with jpackage
       shell: bash
