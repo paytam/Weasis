@@ -84,16 +84,7 @@ jobs:
         echo "WEASIS_VERSION=${{needs.build.outputs.version}}" >> $GITHUB_ENV
         echo "WEASIS_CLEAN_VERSION=${{needs.build.outputs.cleanversion}}" >> $GITHUB_ENV
           
-    - name: Git clone of weasis-distributions/script
-      shell: bash
-      run: |
-        REPO="https://${GITHUB_ACTOR}:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git"
-        git config --global user.email github-actions@github.com
-        git config --global user.name github-actions
-        git clone --filter=blob:none --no-checkout --depth 1  --sparse $REPO .
-        git sparse-checkout init --cone
-        git sparse-checkout set "weasis-distributions/script"
-        git checkout
+    - uses: actions/checkout@v2
 
     - name: Download early-access Oracle JDK
       uses: sormuras/download-jdk@v1
