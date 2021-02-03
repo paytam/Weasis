@@ -18,7 +18,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
@@ -26,6 +28,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.URI;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -709,8 +712,9 @@ public class WeasisLauncher {
 
   /** This following part has been copied from the Main class of the Felix project */
   public static void readProperties(URI propURI, Properties props) {
-    try (InputStream is = FileUtil.getAdaptedConnection(propURI.toURL(), false).getInputStream()) {
-      props.load(is);
+    try (InputStream is = FileUtil.getAdaptedConnection(propURI.toURL(), false).getInputStream();
+        Reader reader = new InputStreamReader(is, StandardCharsets.UTF_8); ) {
+      props.load(reader);
     } catch (Exception ex) {
       LOGGER.log(
           Level.SEVERE,
